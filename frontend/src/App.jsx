@@ -5,7 +5,9 @@ import DrawioEditor from './DrawioEditor';
 import { Upload, FileImage, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, Layout, Plus, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import './App.css'
 
-const API_BASE = "http://localhost:8001";
+// 生产环境适配：使用相对路径 /api，通过 Nginx 转发到后端
+// 这样无论域名是什么，都能自动适配
+const API_BASE = "/api";
 
 // --- Reducer for Managing Tasks ---
 // Actions: ADD_TASKS, UPDATE_TASK, SELECT_TASK

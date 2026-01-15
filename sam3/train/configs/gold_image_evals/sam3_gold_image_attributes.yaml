@@ -1,0 +1,66 @@
+# @package _global_
+defaults:
+  - /configs/eval_base.yaml
+  - _self_
+
+# ============================================================================
+# Paths Configuration (you can override here, but it shouldn't require further changes if eval_base.yaml is correct
+# ============================================================================
+paths:
+  experiment_log_dir: ${paths.base_experiment_log_dir}/gold_attributes/
+  coco_gt: ${paths.base_annotation_path}/gold_attributes_merged_a_release_test.json
+  coco_gts:
+    - ${paths.base_annotation_path}/gold_attributes_merged_a_release_test.json
+    - ${paths.base_annotation_path}/gold_attributes_merged_b_release_test.json
+    - ${paths.base_annotation_path}/gold_attributes_merged_c_release_test.json
+
+
+# ============================================================================
+# Trainer Configuration
+# ============================================================================
+
+trainer:
+  data:
+    val:
+      _target_: sam3.train.data.torch_dataset.TorchDataset
+      dataset:
+        _target_: sam3.train.data.sam3_image_dataset.Sam3ImageDataset
+        coco_json_loader:
+          _target_: sam3.train.data.coco_json_loaders.SAM3_EVAL_API_FROM_JSON_NP
+          _partial_: true
+        img_folder: ${paths.metaclip_img_path}
+        ann_file: ${paths.coco_gt}
+        transforms: ${scratch.base_val_transform}
+        max_ann_per_img: 100000
+        multiplier: 1
+        training: false
+
+      shuffle: False
+      batch_size: ${scratch.val_batch_size}
+      num_workers: ${scratch.num_val_workers}
+      pin_memory: False
+      drop_last: False
+      collate_fn:
+        _target_: sam3.train.data.collator.collate_fn_api
+        _partial_: true
+        repeats: ${scratch.hybrid_repeats}
+        dict_key: gold_attributes
+
+  meters:
+    val:
+      gold_attributes: # this key matches the "dict_key" in the dataloader's collate function
+        cgf1:
+          _target_: sam3.eval.coco_writer.PredictionDumper
+          iou_type: "segm"
+          dump_dir: ${launcher.experiment_log_dir}/dumps/gold_attributes
+          merge_predictions: True
+          postprocessor: ${scratch.mask_postprocessor_thresholded}
+          gather_pred_via_filesys: ${scratch.gather_pred_via_filesys}
+          maxdets: 1000000 # no limit
+          pred_file_evaluators:
+            - _target_: sam3.eval.cgf1_eval.CGF1Evaluator
+              gt_path: ${paths.coco_gts}
+              iou_type: "bbox"
+            - _target_: sam3.eval.cgf1_eval.CGF1Evaluator
+              gt_path: ${paths.coco_gts}
+              iou_type: "segm"

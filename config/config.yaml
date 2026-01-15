@@ -1,0 +1,73 @@
+# SAM3模型配置
+sam3:
+  checkpoint_path: "/shared_data/modelData/modelscope/models/facebook/sam3/sam3.pt"
+  bpe_path: "./sam3/assets/bpe_simple_vocab_16e6.txt.gz"
+  score_threshold: 0.5
+  epsilon_factor: 0.02
+  min_area: 100
+  initial_prompts:
+    - "icon"
+    - "rectangle"
+    - "rounded rectangle"
+    - "diamond"        # 决策/菱形
+    - "ellipse"        # 开始/结束/圆形
+    - "cylinder"       # 数据库
+    - "cloud"          # 云服务
+    - "arrow"          # 箭头
+    - "text_bubble"    # 文本框
+    - "picture"        # 图片
+    - "section_panel"  # 虚线框/分组
+  
+  # 其他可扩展的prompts: triangle, hexagon, parallelogram, actor
+
+# 多模态大模型配置（示例为OpenAI GPT-4V，可替换为Qwen-VL/InternVL等）
+multimodal:
+  mode: "local"  # "api" 或 "local"
+  
+  # API 模式配置 (Cloud)
+  api_key: "sk-xxxx" 
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "qwen-vl-max"
+  
+  # 本地模式配置 (Ollama)
+  # 使用 OpenAI 兼容接口连接本地 Ollama
+  local_base_url: "http://localhost:11434/v1"
+  local_api_key: "ollama"
+  local_model: "qwen3-vl:235b-a22b-instruct-q4_K_M" # 用户当前安装的模型
+  
+  max_tokens: 4000
+  timeout: 60
+  ca_cert_path: false
+  proxy: ""  # 若无代理可留空，有代理则填写完整地址
+
+# 路径配置
+paths:
+  input_dir: "./input"                # 输入图片目录
+  output_dir: "./output"              # 总输出目录
+  temp_dir: "./output/temp"           # 临时文件目录
+  final_dir: "./output/final"         # 最终XML目录
+  flowchart_text_script: "./flowchart_text/main.py"  # 文字识别脚本路径
+  flowchart_text_output: "./flowchart_text/output"   # 文字识别输出目录
+
+# XML合并配置
+xml_merge:
+  layer_rules:  # 层级规则：文字 > base64元素 > 基础元素（面积大的更下）
+    text_layer: 3          # 最上层
+    base64_layer: 2        # 第二层
+    basic_layer: 1         # 基础层
+  style_optimize_prompt: |
+    请优化以下DrawIO XML代码的样式，要求：
+    1. 文字大小、字体、颜色与原图一致；
+    2. 基础图形（矩形、圆角矩形等）的颜色、填充透明度、边框虚实/粗细与原图一致；
+    3. 箭头的样式（粗细、箭头类型、颜色）与原图一致；
+    4. 仅修改样式属性，不改变元素位置和大小；
+    5. 返回完整的XML代码，不要额外说明。
+
+dominant_color:
+  border_width: 5          # 元素边界宽度
+  kmeans_cluster_num: 3    # K-Means聚类数量
+  min_pixel_count: 50      # 最小有效像素数（低于此值返回默认白色）
+  saturation_threshold: 25 # 饱和度阈值（过滤灰色噪点，HSV空间0-255）
+  brightness_min: 12       # 最小亮度（过滤纯黑，0-255）
+  brightness_max: 240      # 最大亮度（过滤纯白，0-255）
+  stroke_brightness_ratio: 0.85 # 描边色亮度衰减比例（保持色相不变）

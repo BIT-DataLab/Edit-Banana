@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment Variables
+.env
+*.env
+!*.env.example
+flowchart_text/.env
+
+# Models & Large and Binary Files - Do not upload
+models/
+*.pth
+*.pt
+*.onnx
+*.bin
+*.safetensors
+*.ckpt
+
+# Output & Temp, Inputs
+output/
+input/
+temp/
+logs/
+sam3_output/
+*.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.DS_Store
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store

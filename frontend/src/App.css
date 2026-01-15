@@ -1,0 +1,441 @@
+
+/* Global Layout Override */
+#root {
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  place-items: unset !important; /* Override center alignment from index.css */
+  display: block !important;
+  overflow: hidden; /* Prevent body scroll, handle inside containers */
+}
+
+/* --- Sidebar Task List (New) --- */
+.sidebar {
+  /* width is controlled by inline styles now */
+  min-width: 150px; 
+  max-width: 500px;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ... existing styles ... */
+
+.task-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* ... existing task-item styles ... */
+
+/* --- Resizers --- */
+.resizer {
+  width: 5px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.resizer:hover, .resizer:active {
+  background: #3b82f6; /* Blue highlight */
+}
+
+/* Resize handle for sidebar specifically if needed */
+.resizer-sidebar {
+  border-right: 1px solid #e5e7eb;
+}
+
+/* --- Toggle Button --- */
+.layout-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.layout-toggle-btn:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+/* --- Editor Layout Updates --- */
+
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.task-item:hover {
+  background: #f9fafb;
+}
+
+.task-item.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.task-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #f3f4f6;
+}
+
+.task-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.task-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-status {
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-icon.completed { color: #059669; }
+.status-icon.error { color: #dc2626; }
+.status-icon.processing { color: #2563eb; }
+
+/* --- Editor Layout Updates --- */
+.editor-layout {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.app-header {
+  height: 64px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #bfdbfe; /* Blue 200 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #2563eb; /* Blue 600 */
+  letter-spacing: -0.025em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* --- Main Content Area --- */
+.main-content {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background-color: #f0f9ff; /* Sky 50 */
+}
+
+/* --- Welcome / Upload Screen --- */
+.welcome-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.upload-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 48px;
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease;
+}
+
+.drop-zone {
+  border: 2px dashed #93c5fd; /* Blue 300 */
+  border-radius: 16px;
+  padding: 48px 24px;
+  margin: 32px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.drop-zone:hover, .drop-zone.active {
+  border-color: #2563eb; /* Blue 600 */
+  background: #eff6ff;
+  transform: scale(1.01);
+}
+
+.drop-zone input {
+  display: none;
+}
+
+/* --- Image Preview Card (New) --- */
+.image-preview-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 0 auto 32px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-img {
+  height: 240px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #fff;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.file-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+/* --- Split View --- */
+.split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.image-pane {
+  /* Width controlled by inline style */
+  flex-shrink: 0;
+  min-width: 200px;
+  border-right: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: width 0.1s linear; /* Faster transition for dragging, or remove during drag */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+  z-index: 5;
+}
+
+.image-pane.collapsed {
+  display: none;
+}
+
+.image-pane-header {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.image-viewer {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background-color: #f8fafc;
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+  background-size: 24px 24px; /* Dot pattern background */
+}
+
+.image-viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #fff;
+}
+
+/* --- Progress Bar --- */
+.progress-container {
+  width: 100%;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.progress-bar-bg {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb); /* Blue 500 to Blue 600 */
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Utilities --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-primary {
+  background: #2563eb; /* Blue 600 */
+  color: #ffffff;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover {
+  background: #1d4ed8; /* Blue 700 */
+  box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+  opacity: 0.8;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-icon {
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.btn-icon:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.backend-status {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.backend-status.online { 
+  color: #059669; 
+  background: #ecfdf5;
+  border-color: #d1fae5;
+}
+.backend-status.offline { 
+  color: #dc2626; 
+  background: #fef2f2;
+  border-color: #fee2e2;
+}

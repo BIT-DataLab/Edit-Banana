@@ -1,0 +1,19 @@
+# OCR 矢量还原系统依赖
+# Azure Document Intelligence SDK
+azure-ai-documentintelligence>=1.0.0
+
+# Mistral AI SDK
+mistralai>=1.0.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 图像处理
+Pillow>=10.0.0
+
+# 数值计算
+numpy>=1.24.0
+
+# HTTP 请求（备用）
+requests>=2.31.0
+

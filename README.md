@@ -12,7 +12,8 @@ This project implements a sophisticated pipeline to convert images (like flowcha
     *   **Crop-Guided Strategy**: Extracts text/formula regions and sends high-res crops to LLMs for pixel-perfect recognition.
 *   **Smart Background Removal**: Integrated **RMBG-2.0** model to automatically remove backgrounds from icons, pictures, and arrows, ensuring they layer correctly in DrawIO.
 *   **Arrow Handling**: Arrows are extracted as transparent images (rather than complex vector paths) to guarantee visual fidelity, handling dashed lines, curves, and complex routing without error.
-*   **Vector Shape Recovery**: Standard shapes (rectangles, diamonds, ellipses, etc.) are converted to native DrawIO vector shapes with accurate fill and stroke colors.
+*   **Vector Shape Recovery**: Standard shapes are converted to native DrawIO vector shapes with accurate fill and stroke colors.
+    *   **Supported Shapes**: Rectangle, Rounded Rectangle, Diamond (Decision), Ellipse (Start/End), Cylinder (Database), Cloud, Hexagon, Triangle, Parallelogram, Text Bubble, Section Panel.
 *   **Multi-User Concurrency**: Built-in support for concurrent user sessions using a **Global Lock** mechanism for thread-safe GPU access and an **LRU Cache** (Least Recently Used) to persist image embeddings across requests, ensuring high performance and stability.
 *   **Web Interface**: A React-based frontend + FastAPI backend for easy uploading and editing.
 
@@ -73,6 +74,19 @@ sam3_workflow/
     Ensure the following models are placed in the `models/` directory:
     *   `models/rmbg/model.onnx` (RMBG-2.0)
     *   SAM3 checkpoints (configured in `config/config.yaml`)
+
+### Detailed Model Setup
+
+Since model weights are large, they are not included in the git repository. Please download them manually:
+
+1.  **RMBG-2.0 (Background Removal)**
+    *   Download `model.onnx` from [HuggingFace - BRIA RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0).
+    *   Place it at: `models/rmbg/model.onnx`.
+
+2.  **SAM 3 (Segment Anything Model 3)**
+    *   Download the SAM3 checkpoint (e.g., `sam3.pt`).
+    *   Update the `checkpoint_path` in `config/config.yaml` to point to your downloaded file.
+    *   Ensure `bpe_simple_vocab_16e6.txt.gz` is present in `sam3/assets/`.
 
 3.  **Environment Configuration**:
     Create `.env` files in `flowchart_text/.env` and root if necessary.

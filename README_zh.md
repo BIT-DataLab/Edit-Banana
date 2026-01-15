@@ -14,7 +14,8 @@
     *   **局部裁剪策略 (Crop-Guided Strategy)**: 将文本/公式区域裁剪为高清小图发送给 LLM，从根本上解决了小字号模糊和公式乱码问题。
 *   **智能背景移除 (Smart Background Removal)**: 集成 **RMBG-2.0** 模型，自动对图标、图片和箭头进行精细抠图（去背），确保它们在 DrawIO 中可以完美叠加，无白色背景干扰。
 *   **高保真箭头处理**: 摒弃了不稳定的矢量化路径生成，将箭头作为透明图像提取。这种方法能完美保留虚线、曲线、复杂的路由走向和端点样式，实现了视觉上的绝对一致。
-*   **矢量形状恢复**: 标准几何形状（矩形、菱形、椭圆、圆柱体等）会被识别并转换为原生的 DrawIO 矢量对象，并自动提取填充色和描边色。
+*   **矢量形状恢复**: 标准几何形状会被识别并转换为原生的 DrawIO 矢量对象，并自动提取填充色和描边色。
+    *   **支持形状**: 矩形 (Rectangle)、圆角矩形 (Rounded Rectangle)、菱形/决策 (Diamond)、椭圆 (Ellipse)、圆柱/数据库 (Cylinder)、云 (Cloud)、六边形 (Hexagon)、三角形 (Triangle)、平行四边形 (Parallelogram)、文本气泡 (Text Bubble)、分组框 (Section Panel)。
 *   **多用户并发支持 (Multi-User Concurrency)**: 通过 **全局锁 (Global Lock)** 和 **LRU 缓存 (LRU Cache)** 机制，实现线程安全的 GPU 资源管理。系统能高效处理多用户并发请求，复用图像特征编码，并在保证显存安全的同时显著提升响应速度。
 *   **全栈 Web 界面**: 提供基于 React 的现代化前端和 FastAPI 后端，支持拖拽上传、进度实时显示和在线编辑预览。
 
@@ -75,6 +76,19 @@ sam3_workflow/
     请确保将以下模型文件放置在 `models/` 目录下：
     *   `models/rmbg/model.onnx` (RMBG-2.0 权重)
     *   SAM3 的 Checkpoint 文件 (在 `config/config.yaml` 中配置路径)
+
+### 模型下载详细说明 (Model Setup)
+
+由于模型权重文件体积较大，未包含在 Git 仓库中，请手动下载并配置：
+
+1.  **RMBG-2.0 (背景移除模型)**
+    *   从 [HuggingFace - BRIA RMBG-2.0](https://huggingface.co/briaai/RMBG-2.0) 下载 `model.onnx`。
+    *   放置路径: `models/rmbg/model.onnx`。
+
+2.  **SAM 3 (Segment Anything Model 3)**
+    *   下载 SAM3 权重文件 (如 `sam3.pt`)。
+    *   修改 `config/config.yaml` 文件中的 `checkpoint_path` 字段，指向你下载的文件路径。
+    *   确保 `sam3/assets/` 目录下存在 tokenizer 文件 `bpe_simple_vocab_16e6.txt.gz`。
 
 3.  **环境配置**:
     在 `flowchart_text/` 目录下或项目根目录创建 `.env` 文件，填入必要的 API 密钥：

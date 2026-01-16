@@ -17,6 +17,8 @@ sam3:
     - "section_panel"  # 虚线框/分组
     - "title bar"
     - "circle"
+    - "trapezoid"
+    - "square"
   # 其他可扩展的prompts: triangle, hexagon, parallelogram, actor
 
 # 多模态大模型配置（示例为OpenAI GPT-4V，可替换为Qwen-VL/InternVL等）

@@ -28,6 +28,9 @@ class RMBGInference:
         providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
         available = ort.get_available_providers()
         sel = [p for p in providers if p in available]
+        print(f"RMBG Service initialized on providers: {sel}")
+        if 'CUDAExecutionProvider' not in sel:
+             print("⚠️ Warning: RMBG Service is running on CPU.")
         sess_options = ort.SessionOptions()
         sess_options.log_severity_level = 3
         self.session = ort.InferenceSession(model_path, providers=sel, sess_options=sess_options)

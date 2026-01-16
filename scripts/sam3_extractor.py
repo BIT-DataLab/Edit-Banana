@@ -83,6 +83,10 @@ class RMBGInference:
         available_providers = ort.get_available_providers()
         self.providers = [p for p in providers if p in available_providers]
         
+        print(f"RMBG Inference initialized on providers: {self.providers}")
+        if 'CUDAExecutionProvider' not in self.providers:
+            print("⚠️ Warning: RMBG is running on CPU. For better performance, install onnxruntime-gpu.")
+            
         # ---------- 新增：配置ONNX Runtime选项，屏蔽警告 ----------
         session_options = ort.SessionOptions()
         # 设置日志级别为ERROR（仅显示严重错误，屏蔽WARNING/INFO）

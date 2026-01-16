@@ -33,7 +33,8 @@
 |----------|------------------------------|--------------------------------|
 | 场景1：基础流程图 | <img src="/static/demo/original_1.jpg" width="400" alt="原始图表1" style="border: 1px solid #eee; border-radius: 4px;"/> | <img src="/static/demo/recon_1.png" width="400" alt="重建结果1" style="border: 1px solid #eee; border-radius: 4px;"/> |
 | 场景2：多层级架构图 | <img src="/static/demo/original_2.png" width="400" alt="原始图表2" style="border: 1px solid #eee; border-radius: 4px;"/> | <img src="/static/demo/recon_2.png" width="400" alt="重建结果2" style="border: 1px solid #eee; border-radius: 4px;"/> |
-| 场景3：复杂技术示意图 | <img src="/static/demo/original_3.jpg" width="400" alt="原始图表3" style="border: 1px solid #eee; border-radius: 4px;"/> | <img src="/static/demo/recon_3.png" width="400" alt="重建结果3" style="border: 1px solid #eee; border-radius: 4px;"/> |
+| 场景3：技术示意图 | <img src="/static/demo/original_3.jpg" width="400" alt="原始图表3" style="border: 1px solid #eee; border-radius: 4px;"/> | <img src="/static/demo/recon_3.png" width="400" alt="重建结果3" style="border: 1px solid #eee; border-radius: 4px;"/> |
+| 场景3：科学公式图 | <img src="/static/demo/original_4.jpg" width="400" alt="原始图表4" style="border: 1px solid #eee; border-radius: 4px;"/> | <img src="/static/demo/recon_4.png" width="400" alt="重建结果4" style="border: 1px solid #eee; border-radius: 4px;"/> |
 
 > ✨ 转换亮点说明：
 > 1.  保留原图表的布局逻辑、颜色搭配与元素层级关系
@@ -54,7 +55,6 @@
     ```bash
     git clone https://github.com/XiangjianYi/Image2DrawIO.git
     cd Image2DrawIO
-    pip install -r requirements.txt
     ```
 
 2.  模型准备
@@ -84,7 +84,14 @@ python server.py
 cd frontend
 npm install && npm run dev
 ```
-浏览器访问 `http://localhost:3000`，上传图片即可完成转换，一键导出DrawIO XML。
+
+##### 前端网页界面展示
+<img src="/static/demo/frontend.png" width="800" alt="Image2DrawIO前端网页截图" style="border: 1px solid #eee; border-radius: 8px; margin: 16px 0;"/>
+
+✨ 前端界面亮点：简洁直观的操作面板、图片上传预览、转换进度实时显示、一键导出DrawIO XML文件
+
+浏览器访问 `https://db121-img2xml.cn/`，上传图片即可完成转换，一键导出DrawIO XML。
+> 📌 操作提示：支持拖拽上传/点击选择图片，转换完成后会自动弹出下载弹窗，也可在结果预览区手动点击「导出XML」按钮。
 
 #### 2. 命令行（批量/脚本集成）
 ```bash
@@ -150,4 +157,3 @@ Image2DrawIO/
 > [![GitHub stars](https://img.shields.io/github/stars/XiangjianYi/Image2DrawIO?style=social)](https://github.com/XiangjianYi/Image2DrawIO/stargazers)
 
 ---
-

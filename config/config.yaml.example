@@ -48,4 +48,25 @@ multimodal:
 
 # 路径配置
 paths:
-  # ... (default paths)
+  input_dir: "./input"                # 输入图片目录
+  output_dir: "./output"              # 总输出目录
+  temp_dir: "./output/temp"           # 临时文件目录
+  final_dir: "./output/final"         # 最终XML目录
+  flowchart_text_script: "./flowchart_text/main.py"  # 文字识别脚本路径
+  flowchart_text_output: "./flowchart_text/output"   # 文字识别输出目录
+
+# XML合并配置
+xml_merge:
+  layer_rules:  # 层级规则：文字 > base64元素 > 基础元素（面积大的更下）
+    text_layer: 3          # 最上层
+    base64_layer: 2        # 第二层
+    basic_layer: 1         # 基础层
+
+
+  
+# SAM3/RMBG 服务端口（供脚本启动和客户端读取）
+services:
+  sam3_endpoints:
+    - ""
+  rmbg_endpoints:
+    - ""

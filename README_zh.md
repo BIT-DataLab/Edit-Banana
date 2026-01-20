@@ -103,6 +103,9 @@ sam3_workflow/
 ```bash
 git clone https://github.com/XiangjianYi/Image2DrawIO.git
 cd Image2DrawIO
+
+conda create --name img2xml python=3.12 -y
+conda activate img2xmls
 ```
 
 ### 3. 初始化文件夹结构 (Initialize Folders)
@@ -128,11 +131,26 @@ mkdir -p models/rmbg
 
 > ⚠️ **注意**: `models/rmbg` 文件夹下必须包含 `model.onnx` 文件。
 
+```bash
+pip install modelscope
+modelscope download --model AI-ModelScope/RMBG-2.0 onnx/model.onnx --local_dir ./models/rmbg
+mv ./models/rmbg/onnx/model.onnx  ./models/rmbg/model.onnx 
+```
+
 ### 5. 安装依赖 (Dependencies)
 
 **后端:**
 ```bash
 pip install -r requirements.txt
+
+# 国内镜像
+pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+```
+
+**pytorch-gpu安装**
+```bash
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+# Linux + Cuda：13.0，可查阅：https://pytorch.org/get-started/locally/
 ```
 
 **前端:**

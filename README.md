@@ -103,6 +103,9 @@ Follow these steps to set up the project locally.
 ```bash
 git clone https://github.com/XiangjianYi/Image2DrawIO.git
 cd Image2DrawIO
+
+conda create --name img2xml python=3.12 -y
+conda activate img2xmls
 ```
 
 ### 3. Initialize Directory Structure
@@ -128,11 +131,24 @@ Download the required models and place them in the correct paths:
 
 > **Note**: For SAM 3 (or the specific segmentation checkpoint used), place the `.pt` file in `models/` and update `config.yaml`.
 
+
+```bash
+pip install modelscope
+modelscope download --model AI-ModelScope/RMBG-2.0 onnx/model.onnx --local_dir ./models/rmbg
+mv ./models/rmbg/onnx/model.onnx  ./models/rmbg/model.onnx 
+```
+
 ### 5. Install Dependencies
 
 **Backend:**
 ```bash
 pip install -r requirements.txt
+```
+
+**pytorch-gpu Installation**
+```bash
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+# Linux + Cuda：13.0 : https://pytorch.org/get-started/locally/
 ```
 
 **Frontend:**

@@ -1,0 +1,51 @@
+# Do not commit: local config, secrets, models, user data
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment Variables
+.env
+*.env
+!*.env.example
+flowchart_text/.env
+config/config.yaml
+
+# Admin Tools & Sensitive/Local Data
+scripts/add_credits.py
+users.db
+*.db
+users.db-journal
+
+# Models & Large and Binary Files - Do not upload
+models/
+*.pth
+*.pt
+*.onnx
+*.bin
+*.safetensors
+*.ckpt
+
+# Output & Temp, Inputs
+output/
+input/
+temp/
+logs/
+sam3_output/
+*.log
+
+# (Frontend removed; algorithm-only repo)
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store
+
+# Local processing & debug
+arrow_processing/
+debug_output/

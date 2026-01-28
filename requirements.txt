@@ -1,0 +1,11 @@
+# Algorithm pipeline only (no web server)
+pyyaml
+opencv-python-headless
+numpy
+Pillow
+scikit-image
+requests
+
+# SAM3 / PyTorch: install separately per your CUDA setup, e.g.:
+# pip install torch torchvision
+# Then add SAM3 model code and weights as required by sam3_service.

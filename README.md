@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/static/Edit Banana_Logo.png" width="180" alt="Edit Banana Logo"/>
+  <img src="/static/banana.jpg" width="180" alt="Edit Banana Logo"/>
 </p>
 
 <h1 align="center">🍌 Edit Banana</h1>

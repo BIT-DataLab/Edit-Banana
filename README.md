@@ -113,7 +113,7 @@ Follow these steps to set up the project locally.
 
 ### 2. Clone Repository
 ```bash
-git clone https://github.com/XiangjianYi/Image2DrawIO.git
+git clone https://github.com/BIT-DataLab/Edit-Banana.git
 cd Image2DrawIO
 ```
 

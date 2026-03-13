@@ -135,6 +135,18 @@ mkdir -p output
 mkdir -p sam3_output
 ```
 
+### 3.1 需用户自行下载的模型与资源（请勿提交到仓库）
+
+以下大文件**不包含在本仓库中**，请自行下载并放到指定目录。仓库已通过 `.gitignore` 排除 `models/`、`sam3_src/` 等，**请勿将这些文件提交到 Git**。
+
+| 资源 | 说明 | 存放路径 | 获取方式 |
+|------|------|----------|----------|
+| **SAM3 权重** | 分割模型权重（须为 `.pt` 格式） | `models/sam3_ms/sam3.pt` 或按 config 配置 | [ModelScope](https://modelscope.cn/models/facebook/sam3)（推荐）或 [Hugging Face](https://huggingface.co/facebook/sam3) |
+| **BPE 词表** | SAM3 文本编码词表 | `models/bpe_simple_vocab_16e6.txt.gz` | 运行 `scripts/setup_sam3.sh` 时会从克隆的 `sam3_src` 复制；或从 [facebookresearch/sam3](https://github.com/facebookresearch/sam3) 仓库 assets 获取 |
+| **RMBG 模型**（可选） | 背景移除，用于图标/箭头 | `models/rmbg/model.onnx` | `pip install modelscope && python scripts/setup_rmbg.py` 或 [ModelScope RMBG-2.0](https://www.modelscope.cn/models/AI-ModelScope/RMBG-2.0/files) 手动下载 |
+
+详细步骤见下文「5. Install SAM3 library」「6. Download model weights」与「Optional — RMBG」。
+
 ### 4. Install PyTorch (required for SAM3)
 Install PyTorch with CUDA support (recommended) or CPU-only. Example for CUDA 11.8:
 ```bash

@@ -17,22 +17,37 @@ const examples: Example[] = [
     id: 1,
     title: "Flowchart Conversion",
     description: "Transform static flowchart images into editable diagrams",
+<<<<<<< HEAD
     beforeImage: "https://placehold.co/600x400/f3f4f6/9ca3af?text=Before:+Static+Flowchart+Image",
     afterImage: "https://placehold.co/600x400/fef3c7/d97706?text=After:+Editable+Diagram",
+=======
+    beforeImage: "/examples/flowchart-before.jpg",
+    afterImage: "/examples/flowchart-after.png",
+>>>>>>> pr-35
   },
   {
     id: 2,
     title: "Architecture Diagram",
     description: "Convert complex architecture diagrams to editable format",
+<<<<<<< HEAD
     beforeImage: "https://placehold.co/600x400/f3f4f6/9ca3af?text=Before:+Architecture+Image",
     afterImage: "https://placehold.co/600x400/fef3c7/d97706?text=After:+Editable+Architecture",
+=======
+    beforeImage: "/examples/architecture-before.png",
+    afterImage: "/examples/architecture-after.png",
+>>>>>>> pr-35
   },
   {
     id: 3,
     title: "Network Topology",
     description: "Turn network diagrams into fully editable assets",
+<<<<<<< HEAD
     beforeImage: "https://placehold.co/600x400/f3f4f6/9ca3af?text=Before:+Network+Image",
     afterImage: "https://placehold.co/600x400/fef3c7/d97706?text=After:+Editable+Network",
+=======
+    beforeImage: "/examples/network-before.jpg",
+    afterImage: "/examples/network-after.png",
+>>>>>>> pr-35
   },
 ]
 

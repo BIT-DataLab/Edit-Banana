@@ -6,7 +6,10 @@ import { track } from "@vercel/analytics"
 import { Button } from "@/components/ui/button"
 import { FileUpload } from "@/components/upload/file-upload"
 import { uploadFile, getJobStatus, downloadResult, APIError } from "@/lib/api"
+<<<<<<< HEAD
 import { useConversionHistoryContext } from "@/components/history/conversion-history-provider"
+=======
+>>>>>>> pr-35
 import type { Job } from "@/lib/types"
 
 export function UploadSection() {
@@ -17,7 +20,10 @@ export function UploadSection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
+<<<<<<< HEAD
   const { addHistoryItem, updateHistoryItem } = useConversionHistoryContext()
+=======
+>>>>>>> pr-35
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
@@ -41,6 +47,7 @@ export function UploadSection() {
       setJobId(response.job_id)
       setJobStatus("pending")
 
+<<<<<<< HEAD
       // Create initial history item
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://editbanana.anxin6.cn"
       addHistoryItem({
@@ -54,6 +61,10 @@ export function UploadSection() {
 
       // Poll for status
       pollJobStatus(response.job_id, selectedFile.name, selectedFile.size)
+=======
+      // Poll for status
+      pollJobStatus(response.job_id)
+>>>>>>> pr-35
     } catch (err) {
       setLoading(false)
       if (err instanceof APIError) {
@@ -64,7 +75,11 @@ export function UploadSection() {
     }
   }
 
+<<<<<<< HEAD
   const pollJobStatus = async (id: string, filename: string, fileSize: number) => {
+=======
+  const pollJobStatus = async (id: string) => {
+>>>>>>> pr-35
     const interval = setInterval(async () => {
       try {
         const job = await getJobStatus(id)
@@ -79,6 +94,7 @@ export function UploadSection() {
           clearInterval(interval)
           setLoading(false)
           setProgress(100)
+<<<<<<< HEAD
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://editbanana.anxin6.cn"
           const newResultUrl = `${apiUrl}/api/v1/jobs/${id}/result`
           setResultUrl(newResultUrl)
@@ -89,27 +105,37 @@ export function UploadSection() {
             status: "completed",
             resultUrl: newResultUrl,
           })
+=======
+          setResultUrl(`${process.env.NEXT_PUBLIC_API_URL || "https://editbanana.anxin6.cn"}/api/v1/jobs/${id}/result`)
+          track("conversion_completed", { job_id: id })
+>>>>>>> pr-35
         } else if (job.status === "failed" || job.status === "cancelled") {
           clearInterval(interval)
           setLoading(false)
           setError(job.error || "Conversion failed")
+<<<<<<< HEAD
 
           // Update history item with error status
           updateHistoryItem(id, {
             status: job.status as "failed" | "cancelled",
             error: job.error || "Conversion failed",
           })
+=======
+>>>>>>> pr-35
         }
       } catch (err) {
         clearInterval(interval)
         setLoading(false)
         setError("Failed to get job status")
+<<<<<<< HEAD
 
         // Update history item with error
         updateHistoryItem(id, {
           status: "failed",
           error: "Failed to get job status",
         })
+=======
+>>>>>>> pr-35
       }
     }, 2000)
   }

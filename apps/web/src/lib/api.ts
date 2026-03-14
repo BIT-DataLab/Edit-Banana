@@ -18,9 +18,8 @@ export class APIError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = "请求失败"
-    let data: any = {}
     try {
-      data = await response.json()
+      const data = await response.json() as { detail?: string; message?: string }
       message = data.detail || data.message || message
     } catch {
       message = response.statusText || message

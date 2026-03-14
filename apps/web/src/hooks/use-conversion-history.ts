@@ -1,30 +1,32 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { ConversionHistoryItem, HistoryStorage } from "@/types/history"
 import { HISTORY_STORAGE_KEY, MAX_HISTORY_ITEMS } from "@/types/history"
 
-export function useConversionHistory() {
-  const [history, setHistory] = useState<ConversionHistoryItem[]>([])
-  const [isLoaded, setIsLoaded] = useState(false)
-
-  // Load history from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
-      if (stored) {
-        const parsed: HistoryStorage = JSON.parse(stored)
-        setHistory(parsed.items || [])
-      }
-    } catch (error) {
-      console.error("Failed to load conversion history:", error)
+function loadHistoryFromStorage(): ConversionHistoryItem[] {
+  try {
+    const stored = localStorage.getItem(HISTORY_STORAGE_KEY)
+    if (stored) {
+      const parsed: HistoryStorage = JSON.parse(stored)
+      return parsed.items || []
     }
-    setIsLoaded(true)
-  }, [])
+  } catch (error) {
+    console.error("Failed to load conversion history:", error)
+  }
+  return []
+}
+
+export function useConversionHistory() {
+  const [history, setHistory] = useState<ConversionHistoryItem[]>(loadHistoryFromStorage)
+  const isFirstRender = useRef(true)
 
   // Save history to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoaded) return
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
 
     try {
       const storage: HistoryStorage = {
@@ -35,7 +37,7 @@ export function useConversionHistory() {
     } catch (error) {
       console.error("Failed to save conversion history:", error)
     }
-  }, [history, isLoaded])
+  }, [history])
 
   const addHistoryItem = useCallback((item: Omit<ConversionHistoryItem, "id" | "createdAt">) => {
     const newItem: ConversionHistoryItem = {
@@ -81,7 +83,7 @@ export function useConversionHistory() {
 
   return {
     history,
-    isLoaded,
+    isLoaded: true,
     addHistoryItem,
     updateHistoryItem,
     removeHistoryItem,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useEffect } from "react"
+import { useCallback, useState, useEffect, useRef } from "react"
 import { ReferralInfo } from "@/types/share"
 
 const REFERRAL_STORAGE_KEY = "editbanana_referral"
@@ -16,43 +16,37 @@ function generateReferralCode(): string {
   return code
 }
 
-export function useReferral() {
-  const [referralInfo, setReferralInfo] = useState<ReferralInfo>({
-    referralCode: "",
-    invitedCount: 0,
-    bonusCredits: 0,
-  })
-  const [isLoaded, setIsLoaded] = useState(false)
+function loadReferralInfo(): ReferralInfo {
+  try {
+    const storedCode = localStorage.getItem(REFERRAL_STORAGE_KEY)
+    const storedCount = localStorage.getItem(INVITED_COUNT_KEY)
 
-  // Load referral info from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedCode = localStorage.getItem(REFERRAL_STORAGE_KEY)
-      const storedCount = localStorage.getItem(INVITED_COUNT_KEY)
-
-      const code = storedCode || generateReferralCode()
-      if (!storedCode) {
-        localStorage.setItem(REFERRAL_STORAGE_KEY, code)
-      }
-
-      const count = storedCount ? parseInt(storedCount, 10) : 0
-      const bonus = count * 5 // 5 credits per invite
-
-      setReferralInfo({
-        referralCode: code,
-        invitedCount: count,
-        bonusCredits: bonus,
-      })
-    } catch {
-      // localStorage not available (private browsing)
-      setReferralInfo({
-        referralCode: generateReferralCode(),
-        invitedCount: 0,
-        bonusCredits: 0,
-      })
+    const code = storedCode || generateReferralCode()
+    if (!storedCode) {
+      localStorage.setItem(REFERRAL_STORAGE_KEY, code)
     }
-    setIsLoaded(true)
-  }, [])
+
+    const count = storedCount ? parseInt(storedCount, 10) : 0
+    const bonus = count * 5 // 5 credits per invite
+
+    return {
+      referralCode: code,
+      invitedCount: count,
+      bonusCredits: bonus,
+    }
+  } catch {
+    // localStorage not available (private browsing)
+    return {
+      referralCode: generateReferralCode(),
+      invitedCount: 0,
+      bonusCredits: 0,
+    }
+  }
+}
+
+export function useReferral() {
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo>(loadReferralInfo)
+  const hasCheckedReferral = useRef(false)
 
   const getReferralCode = useCallback((): string => {
     return referralInfo.referralCode
@@ -81,25 +75,23 @@ export function useReferral() {
     }
   }, [])
 
-  const checkForReferral = useCallback((): void => {
-    // Check if user came from a referral link
+  // Check for referral on mount - using setTimeout to avoid synchronous setState in effect
+  useEffect(() => {
+    if (hasCheckedReferral.current) return
+    hasCheckedReferral.current = true
+
     const urlParams = new URLSearchParams(window.location.search)
     const refCode = urlParams.get("ref")
     if (refCode && refCode !== referralInfo.referralCode) {
-      // Track this referral
-      trackReferral(refCode)
+      // Defer state update to avoid synchronous setState in effect body
+      setTimeout(() => {
+        trackReferral(refCode)
+      }, 0)
       // Remove ref param from URL without reloading
       const newUrl = window.location.pathname
       window.history.replaceState({}, document.title, newUrl)
     }
   }, [referralInfo.referralCode, trackReferral])
-
-  // Check for referral on mount
-  useEffect(() => {
-    if (isLoaded) {
-      checkForReferral()
-    }
-  }, [isLoaded, checkForReferral])
 
   return {
     referralCode: referralInfo.referralCode,
@@ -108,7 +100,6 @@ export function useReferral() {
     getReferralCode,
     generateReferralLink,
     trackReferral,
-    checkForReferral,
-    isLoaded,
+    isLoaded: true,
   }
 }

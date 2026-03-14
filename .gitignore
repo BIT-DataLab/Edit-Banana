@@ -48,3 +48,7 @@ sam3_output/
 arrow_processing/
 debug_output/
 TODO.md
+
+# TODO files for worktrees
+TODO.md
+*.todo.md

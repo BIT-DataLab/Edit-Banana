@@ -1,0 +1,49 @@
+# SAM3 model config
+sam3:
+  checkpoint_path: "/path/to/models/sam3.pt"
+  bpe_path: "./path/to/bpe_simple_vocab_16e6.txt.gz"
+  score_threshold: 0.5
+  epsilon_factor: 0.02
+  min_area: 100
+
+# Prompt groups: prompts are also defined in prompts/*.py; here you set thresholds per group.
+prompt_groups:
+  image:
+    name: image
+    score_threshold: 0.5
+    min_area: 100
+    priority: 2
+  arrow:
+    name: arrow
+    score_threshold: 0.45
+    min_area: 50
+    priority: 4
+  shape:
+    name: shape
+    score_threshold: 0.5
+    min_area: 200
+    priority: 3
+  background:
+    name: background
+    score_threshold: 0.25
+    min_area: 500
+    priority: 1
+
+# Multimodal / VLM (optional, for text/OCR)
+multimodal:
+  mode: "api"
+  api_key: "YOUR_API_KEY_HERE"
+  base_url: "YOUR_BASE_URL_HERE"
+  model: "your-vlm-model-name"
+  local_base_url: "http://localhost:11434/v1"
+  local_api_key: "ollama"
+  local_model: "local-model-name"
+  force_vlm_ocr: false
+  max_tokens: 4000
+  timeout: 60
+  ca_cert_path: false
+  proxy: ""
+
+# Paths (optional)
+paths: {}
+# pipeline_mode: full   # optional: full | fast

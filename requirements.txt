@@ -1,0 +1,14 @@
+# Pipeline & optional web backend
+pyyaml
+opencv-python-headless
+numpy
+Pillow
+scikit-image
+requests
+fastapi
+uvicorn[standard]
+
+# Text OCR (local, easy to install)
+pytesseract
+
+# SAM3 / PyTorch: install separately per your CUDA setup; see README and config.

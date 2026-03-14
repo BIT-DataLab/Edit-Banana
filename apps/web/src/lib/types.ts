@@ -10,6 +10,8 @@ export interface Job {
   error?: string
   created_at: string
   completed_at?: string
+  total_steps?: number
+  current_step?: number
 }
 
 // WebSocket消息类型

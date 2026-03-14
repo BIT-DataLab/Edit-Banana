@@ -55,7 +55,7 @@ export function UploadSection() {
         setJobStatus(job.status)
 
         // Calculate progress
-        if (job.total_steps > 0) {
+        if (job.total_steps && job.total_steps > 0 && job.current_step !== undefined) {
           setProgress(Math.round((job.current_step / job.total_steps) * 100))
         }
 

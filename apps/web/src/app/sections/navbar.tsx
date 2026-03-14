@@ -1,10 +1,6 @@
 "use client"
 
-<<<<<<< HEAD
 import { Banana, History } from "lucide-react"
-=======
-import { Banana } from "lucide-react"
->>>>>>> pr-35
 
 export function Navbar() {
   return (
@@ -19,7 +15,6 @@ export function Navbar() {
           </div>
           <div className="flex items-center gap-4">
             <a
-<<<<<<< HEAD
               href="#history"
               className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
@@ -27,8 +22,6 @@ export function Navbar() {
               History
             </a>
             <a
-=======
->>>>>>> pr-35
               href="https://github.com/yourusername/edit-banana"
               target="_blank"
               rel="noopener noreferrer"

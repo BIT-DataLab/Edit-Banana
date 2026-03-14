@@ -1,95 +1,80 @@
-> !! Do not commit this file !!
+> !! DO NOT COMMIT THIS FILE !!
 
-# T0-cicd · Phase 0
+# T0-merge-stabilize · Phase 0
 
-> Every PR is automatically tested and deployed safely.
+> Merge foundational PRs and resolve conflicts to establish a stable main branch
 
 ## Context
 
-- **Dependency**: None (Phase 0)
-- **Boundary**: Only add GitHub Actions workflows. No application code changes.
+- **Dependency**: None (Phase 0, first task)
+- **Boundary**: Git operations only, no code changes beyond merge conflict resolution
 
-## Current Issues
+## Current State
 
-- No automated testing on PRs
-- No build verification
-- Manual deployment process
-- No quality gates
+11 open PRs with conflicts:
+- **Duplicates**: #39 duplicates #36, #40 duplicates #38
+- **Conflicts**: #38 vs #40 (CI/CD), #41 vs #42 (arrow_processor.py)
+
+## Merge Order (Dependency Graph)
+
+```
+#25 (config-loader) → #31 (text-extraction) → #38 (CI/CD)
+                                    ↓
+                              #36 (Next.js frontend)
+                                    ↓
+                    #35 (arrow), #34 (SAM3), #37 (layer-merge)
+                                    ↓
+                         #41, #42 (arrow_processor)
+```
 
 ## Tasks
 
-### 1. Create GitHub Actions Workflow
+### 1. Merge foundational PRs
 
-- [ ] Create `.github/workflows/ci.yml`
-- [ ] Configure triggers: push to main, pull requests to main
-- [ ] Add Node.js setup (18.x or 20.x)
-- [ ] Add steps: checkout, install deps, lint, build
+- [ ] Merge PR #25 (config-loader improvements)
+- [ ] Merge PR #31 (text-extraction fix)
+- [ ] Merge PR #38 (CI/CD workflow) - close #40 as duplicate
+- **File**: Git operations
+- **验收**: `git log --oneline` shows clean merge commits
+- **测试**: CI passes on merged branch
 
-**File**: `.github/workflows/ci.yml` (create)
-**Template**:
-```yaml
-name: CI
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-```
+### 2. Merge frontend base
 
-### 2. Add Vercel Deployment
+- [ ] Merge PR #36 (Next.js frontend) - close #39 as duplicate
+- **File**: Git operations
+- **验收**: Frontend code present in apps/web/
+- **测试**: `npm run build` succeeds
 
-- [ ] Configure Vercel integration in GitHub
-- [ ] Add preview deployments for PRs
-- [ ] Add production deployment on merge to main
+### 3. Merge feature PRs
 
-**Steps**:
-1. Connect GitHub repo to Vercel
-2. Configure environment variables if needed
-3. Test deployment with this branch
+- [ ] Merge PR #35 (arrow improvements)
+- [ ] Merge PR #34 (SAM3 integration)
+- [ ] Merge PR #37 (layer-based XML merging)
+- **File**: Git operations
+- **验收**: All feature code integrated
+- **测试**: pytest tests/core/ passes
 
-### 3. Add PR Template
+### 4. Resolve arrow_processor conflicts
 
-- [ ] Create `.github/pull_request_template.md`
-- [ ] Include sections: Description, Test Plan, Screenshots
-
-**File**: `.github/pull_request_template.md` (create)
-
-### 4. Add Branch Protection
-
-- [ ] Configure branch protection for main
-- [ ] Require PR reviews
-- [ ] Require status checks to pass
-- [ ] Require up-to-date branches
-
-**Note**: This requires admin access to repository settings
+- [ ] Analyze #41 vs #42 differences
+- [ ] Choose best implementation or merge both
+- [ ] Resolve any merge conflicts
+- **File**: `core/processors/arrow_processor.py`
+- **验收**: No duplicate code, all tests pass
+- **测试**: Arrow processing functional
 
 ## Done When
 
-- [ ] CI workflow runs on this PR
-- [ ] Build passes in CI
-- [ ] PR template appears when creating new PR
-- [ ] Vercel deploys preview for this branch
+- [ ] All foundational PRs merged
+- [ ] Duplicates (#39, #40) closed
+- [ ] No merge conflicts remaining
+- [ ] CI passes on main
+- [ ] PR created with clean merge
 
----
+## Test Plan
 
-### Testing Commands
-
-```bash
-# Push this branch to trigger CI
-git push origin T0-cicd
-
-# Verify workflow runs at:
-# https://github.com/BIT-DataLab/Edit-Banana/actions
-```
+**Manual verification**:
+1. Check `git log --graph` shows clean history
+2. Verify no duplicate files
+3. Run full test suite
+4. Confirm CI passes

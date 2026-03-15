@@ -7,17 +7,20 @@ Vector path from skeleton, or fallback to image when needed.
 
 import io
 import base64
+import logging
 from typing import List, Optional, Tuple, Dict, Any
 import cv2
 import numpy as np
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 try:
     from skimage.morphology import skeletonize
     SKELETONIZE_AVAILABLE = True
 except ImportError:
     SKELETONIZE_AVAILABLE = False
-    print("[ArrowProcessor] Warning: skimage not available, skeletonize disabled")
+    logger.warning("skimage not available, skeletonize disabled")
 
 from .base import BaseProcessor, ProcessingContext
 from .data_types import ElementInfo, BoundingBox, ProcessingResult, LayerLevel

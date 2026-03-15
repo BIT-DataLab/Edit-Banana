@@ -19,8 +19,15 @@ import sys
 import argparse
 import warnings
 import yaml
+import json
+import logging
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Skip PaddleX model host connectivity check to avoid startup delay
 os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
@@ -39,7 +46,7 @@ from modules import (
     XMLMerger,
     MetricEvaluator,
     RefinementProcessor,
-    
+
     # Text (modules/text/)
     TextRestorer,
 
@@ -51,11 +58,166 @@ from modules import (
     get_layer_level,
 )
 
+# Import exceptions for structured error handling
+from modules.exceptions import (
+    EditBananaException,
+    ErrorSeverity,
+    SegmentationError,
+)
+
+# Import retry decorator for resilient operations
+from modules.core import retry_with_defaults
+
 # Prompt groups enum
 from modules.sam3_info_extractor import PromptGroup
 
 # Text module available (depends on ocr/coord_processor etc.)
 TEXT_MODULE_AVAILABLE = TextRestorer is not None
+
+
+# ======================== Checkpoint Manager ========================
+class CheckpointManager:
+    """Manages pipeline checkpoint saving and recovery."""
+
+    CHECKPOINT_FILENAME = "pipeline_checkpoint.json"
+
+    def __init__(self, output_dir: str):
+        self.output_dir = output_dir
+        self.checkpoint_path = os.path.join(output_dir, self.CHECKPOINT_FILENAME)
+
+    def save_checkpoint(self, stage: int, context: 'ProcessingContext',
+                       stage_results: Optional[Dict[str, Any]] = None) -> str:
+        """Save checkpoint after completing a stage.
+
+        Args:
+            stage: Completed stage number (0-7)
+            context: Current processing context
+            stage_results: Optional stage-specific results
+
+        Returns:
+            Path to saved checkpoint file
+        """
+        checkpoint_data = {
+            'version': '1.0',
+            'timestamp': datetime.utcnow().isoformat(),
+            'completed_stage': stage,
+            'image_path': context.image_path,
+            'output_dir': context.output_dir,
+            'canvas_width': context.canvas_width,
+            'canvas_height': context.canvas_height,
+            'elements': [elem.to_dict() for elem in context.elements],
+            'xml_fragments': [frag.to_dict() for frag in context.xml_fragments],
+            'intermediate_results': context.intermediate_results,
+            'stage_results': stage_results or {}
+        }
+
+        os.makedirs(self.output_dir, exist_ok=True)
+        with open(self.checkpoint_path, 'w', encoding='utf-8') as f:
+            json.dump(checkpoint_data, f, indent=2, ensure_ascii=False)
+
+        logger.debug(f"Checkpoint saved: stage {stage} -> {self.checkpoint_path}")
+        return self.checkpoint_path
+
+    def load_checkpoint(self) -> Optional[Dict[str, Any]]:
+        """Load checkpoint if it exists.
+
+        Returns:
+            Checkpoint data dict or None if not found
+        """
+        if not os.path.exists(self.checkpoint_path):
+            return None
+
+        try:
+            with open(self.checkpoint_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            logger.info(f"Checkpoint loaded: stage {data.get('completed_stage', 'unknown')}")
+            return data
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning(f"Failed to load checkpoint: {e}")
+            return None
+
+    def restore_context(self, checkpoint_data: Dict[str, Any]) -> 'ProcessingContext':
+        """Restore ProcessingContext from checkpoint data.
+
+        Args:
+            checkpoint_data: Loaded checkpoint data
+
+        Returns:
+            Restored ProcessingContext
+        """
+        from modules.data_types import ElementInfo, XMLFragment
+
+        context = ProcessingContext(
+            image_path=checkpoint_data['image_path'],
+            output_dir=checkpoint_data['output_dir'],
+            canvas_width=checkpoint_data.get('canvas_width', 0),
+            canvas_height=checkpoint_data.get('canvas_height', 0),
+        )
+
+        # Restore elements
+        if 'elements' in checkpoint_data:
+            context.elements = [
+                ElementInfo.from_dict(elem_data)
+                for elem_data in checkpoint_data['elements']
+            ]
+
+        # Restore XML fragments
+        if 'xml_fragments' in checkpoint_data:
+            context.xml_fragments = [
+                XMLFragment.from_dict(frag_data)
+                for frag_data in checkpoint_data['xml_fragments']
+            ]
+
+        # Restore intermediate results
+        context.intermediate_results = checkpoint_data.get('intermediate_results', {})
+
+        return context
+
+    def clear_checkpoint(self):
+        """Remove checkpoint file after successful completion."""
+        if os.path.exists(self.checkpoint_path):
+            os.remove(self.checkpoint_path)
+            logger.debug(f"Checkpoint cleared: {self.checkpoint_path}")
+
+    def get_last_completed_stage(self) -> int:
+        """Get the last completed stage from checkpoint.
+
+        Returns:
+            Stage number (0-7) or -1 if no checkpoint
+        """
+        data = self.load_checkpoint()
+        if data is None:
+            return -1
+        return data.get('completed_stage', -1)
+
+
+# ======================== Pipeline Result ========================
+@dataclass
+class PipelineResult:
+    """Result of pipeline processing with partial data on failure."""
+    success: bool
+    output_path: Optional[str] = None
+    error_message: Optional[str] = None
+    error_code: Optional[str] = None
+    can_retry: bool = False
+    last_completed_stage: int = -1
+    partial_elements: List[Dict[str, Any]] = field(default_factory=list)
+    partial_xml_fragments: List[Dict[str, Any]] = field(default_factory=list)
+    checkpoint_path: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for API response."""
+        return {
+            'success': self.success,
+            'output_path': self.output_path,
+            'error_message': self.error_message,
+            'error_code': self.error_code,
+            'can_retry': self.can_retry,
+            'last_completed_stage': self.last_completed_stage,
+            'partial_elements_count': len(self.partial_elements),
+            'partial_xml_fragments_count': len(self.partial_xml_fragments),
+            'checkpoint_path': self.checkpoint_path,
+        }
 
 
 # ======================== config ========================
@@ -95,16 +257,29 @@ class Pipeline:
         """OCR/text step; None if deps missing."""
         if self._text_restorer is None and TextRestorer is not None:
             ocr_engine = (self.config.get("ocr") or {}).get("engine", "tesseract")
-            self._text_restorer = TextRestorer(
+            from modules.text.text_restorer import TextRestorer as TrClass
+            self._text_restorer = TrClass(
                 formula_engine="none",
                 ocr_engine=ocr_engine,
             )
+            # Wrap process method with retry
+            self._text_restorer.process = retry_with_defaults(
+                max_retries=3, base_delay=1.0
+            )(self._text_restorer.process)
         return self._text_restorer
     
     @property
     def sam3_extractor(self) -> Sam3InfoExtractor:
         if self._sam3_extractor is None:
-            self._sam3_extractor = Sam3InfoExtractor()
+            from modules.sam3_info_extractor import Sam3InfoExtractor as Sam3Class
+            self._sam3_extractor = Sam3Class()
+            # Wrap key methods with retry for resilience
+            self._sam3_extractor.extract_by_group = retry_with_defaults(
+                max_retries=3, base_delay=2.0
+            )(self._sam3_extractor.extract_by_group)
+            self._sam3_extractor.process = retry_with_defaults(
+                max_retries=3, base_delay=2.0
+            )(self._sam3_extractor.process)
         return self._sam3_extractor
     
     @property
@@ -144,135 +319,253 @@ class Pipeline:
                       output_dir: str = None,
                       with_refinement: bool = False,
                       with_text: bool = True,
-                      groups: List[PromptGroup] = None) -> Optional[str]:
-        """Run pipeline on one image. Returns output XML path or None."""
+                      groups: List[PromptGroup] = None,
+                      resume_from_checkpoint: bool = False) -> PipelineResult:
+        """Run pipeline on one image. Returns PipelineResult with partial data on failure.
+
+        Args:
+            image_path: Input image path
+            output_dir: Output directory (default: ./output)
+            with_refinement: Enable quality evaluation and refinement
+            with_text: Enable text extraction (OCR)
+            groups: Prompt groups to process (default: all)
+            resume_from_checkpoint: Resume from last checkpoint if available
+
+        Returns:
+            PipelineResult with success status, output path (if successful),
+            error details (if failed), and partial results for recovery.
+        """
         print(f"\n{'='*60}")
         print(f"Processing: {image_path}")
         print(f"{'='*60}")
-        
+
         # Output directory
         if output_dir is None:
             output_dir = self.config.get('paths', {}).get('output_dir', './output')
-        
+
         img_stem = Path(image_path).stem
         img_output_dir = os.path.join(output_dir, img_stem)
         os.makedirs(img_output_dir, exist_ok=True)
-        
-        print("\n[0] Preprocess...")
-        context = ProcessingContext(
-            image_path=image_path,
-            output_dir=img_output_dir
-        )
-        context.intermediate_results['original_image_path'] = image_path
-        context.intermediate_results['was_upscaled'] = False
-        context.intermediate_results['upscale_factor'] = 1.0
+
+        # Initialize checkpoint manager
+        checkpoint_mgr = CheckpointManager(img_output_dir)
+
+        # Check for existing checkpoint
+        start_stage = 0
+        context = None
+
+        if resume_from_checkpoint:
+            checkpoint_data = checkpoint_mgr.load_checkpoint()
+            if checkpoint_data:
+                last_completed = checkpoint_data.get('completed_stage', -1)
+                if last_completed >= 0:
+                    print(f"\n[Resume] Found checkpoint at stage {last_completed}, resuming...")
+                    try:
+                        context = checkpoint_mgr.restore_context(checkpoint_data)
+                        start_stage = last_completed + 1
+                        print(f"[Resume] Restored {len(context.elements)} elements, {len(context.xml_fragments)} fragments")
+                    except Exception as e:
+                        print(f"[Resume] Failed to restore checkpoint: {e}")
+                        print("[Resume] Starting from beginning...")
+                        context = None
+
+        # Initialize context if not restored
+        if context is None:
+            print("\n[0] Preprocess...")
+            context = ProcessingContext(
+                image_path=image_path,
+                output_dir=img_output_dir
+            )
+            context.intermediate_results['original_image_path'] = image_path
+            context.intermediate_results['was_upscaled'] = False
+            context.intermediate_results['upscale_factor'] = 1.0
+            # Save initial checkpoint
+            checkpoint_mgr.save_checkpoint(0, context)
 
         try:
-            if with_text and self.text_restorer is not None:
-                print("\n[1] Text extraction (OCR)...")
-                try:
-                    text_xml_content = self.text_restorer.process(image_path)
-                    text_output_path = os.path.join(img_output_dir, "text_only.drawio")
-                    with open(text_output_path, 'w', encoding='utf-8') as f:
-                        f.write(text_xml_content)
-                    context.intermediate_results['text_xml'] = text_xml_content
-                    print(f"   Saved: {text_output_path}")
-                except Exception as e:
-                    print(f"   Text step failed: {e}")
-                    print("   Continuing without text...")
-            elif with_text:
-                print("\n[1] Text extraction (skipped - deps)")
-            else:
-                print("\n[1] Text extraction (skipped)")
-
-            print("\n[2] Segmentation (SAM3)...")
-
-            if groups:
-                # Extract by group
-                all_elements = []
-                for group in groups:
-                    result = self.sam3_extractor.extract_by_group(context, group)
-                    all_elements.extend(result.elements)
-                for i, elem in enumerate(all_elements):
-                    elem.id = i
-                context.elements = all_elements
-                context.canvas_width = result.canvas_width
-                context.canvas_height = result.canvas_height
-            else:
-                # Full extraction
-                result = self.sam3_extractor.process(context)
-                if not result.success:
-                    raise Exception(f"SAM3 extraction failed: {result.error_message}")
-                context.elements = result.elements
-                context.canvas_width = result.canvas_width
-                context.canvas_height = result.canvas_height
-            
-            print(f"   Elements: {len(context.elements)}")
-            vis_path = os.path.join(img_output_dir, "sam3_extraction.png")
-            self.sam3_extractor.save_visualization(context, vis_path)
-            meta_path = os.path.join(img_output_dir, "sam3_metadata.json")
-            self.sam3_extractor.save_metadata(context, meta_path)
-
-            print("\n[3] Shape/icon processing...")
-            result = self.icon_processor.process(context)
-            print(f"   Icons: {result.metadata.get('processed_count', 0)}")
-            result = self.shape_processor.process(context)
-            print(f"   Shapes: {result.metadata.get('processed_count', 0)}")
-
-            print("\n[4] XML fragments...")
-            self._generate_xml_fragments(context)
-            xml_count = len([e for e in context.elements if e.has_xml()])
-            print(f"   Fragments: {xml_count}")
-
-            if with_refinement:
-                print("\n[5] Metric evaluation...")
-                eval_result = self.metric_evaluator.process(context)
-                
-                overall_score = eval_result.metadata.get('overall_score', 0)
-                bad_regions = eval_result.metadata.get('bad_regions', [])
-                needs_refinement = eval_result.metadata.get('needs_refinement', False)
-                bad_region_ratio = eval_result.metadata.get('bad_region_ratio', 0)
-                pixel_coverage = eval_result.metadata.get('pixel_coverage', 0)
-                print(f"   Score: {overall_score:.1f}/100, bad regions: {len(bad_regions)} ({bad_region_ratio:.1f}%)")
-                print(f"   Coverage: {pixel_coverage:.1f}%, needs_refine: {needs_refinement}")
-
-                REFINEMENT_THRESHOLD = 90.0
-                should_refine = overall_score < REFINEMENT_THRESHOLD and bad_regions
-
-                if should_refine:
-                    print("\n[6] Refinement...")
-                    context.intermediate_results['bad_regions'] = bad_regions
-                    refine_result = self.refinement_processor.process(context)
-                    new_count = refine_result.metadata.get('new_elements_count', 0)
-                    print(f"   Added {new_count} elements")
-                    
-                    if new_count > 0:
-                        refine_vis_path = os.path.join(img_output_dir, "refinement_result.png")
-                        new_elements = context.elements[-new_count:] if new_count > 0 else []
-                        self.refinement_processor.save_visualization(context, new_elements, refine_vis_path)
-                        print(f"   Saved: {refine_vis_path}")
-                elif not bad_regions:
-                    print("\n[6] Refinement skipped (no bad regions)")
+            # Stage 1: Text extraction (OCR)
+            if start_stage <= 1:
+                if with_text and self.text_restorer is not None:
+                    print("\n[1] Text extraction (OCR)...")
+                    try:
+                        text_xml_content = self.text_restorer.process(image_path)
+                        text_output_path = os.path.join(img_output_dir, "text_only.drawio")
+                        with open(text_output_path, 'w', encoding='utf-8') as f:
+                            f.write(text_xml_content)
+                        context.intermediate_results['text_xml'] = text_xml_content
+                        print(f"   Saved: {text_output_path}")
+                    except Exception as e:
+                        print(f"   Text step failed: {e}")
+                        print("   Continuing without text...")
+                elif with_text:
+                    print("\n[1] Text extraction (skipped - deps)")
                 else:
-                    print("\n[6] Refinement skipped (score ok)")
+                    print("\n[1] Text extraction (skipped)")
+                checkpoint_mgr.save_checkpoint(1, context)
 
-            print("\n[7] Merge XML...")
-            merge_result = self.xml_merger.process(context)
-            
-            if not merge_result.success:
-                raise Exception(f"XML merge failed: {merge_result.error_message}")
-            
-            output_path = merge_result.metadata.get('output_path')
-            print(f"   Output: {output_path}")
-            print(f"\n{'='*60}\nDone.\n{'='*60}")
-            
-            return output_path
-            
+            # Stage 2: Segmentation (SAM3)
+            if start_stage <= 2:
+                print("\n[2] Segmentation (SAM3)...")
+
+                if groups:
+                    # Extract by group
+                    all_elements = []
+                    for group in groups:
+                        result = self.sam3_extractor.extract_by_group(context, group)
+                        all_elements.extend(result.elements)
+                    for i, elem in enumerate(all_elements):
+                        elem.id = i
+                    context.elements = all_elements
+                    context.canvas_width = result.canvas_width
+                    context.canvas_height = result.canvas_height
+                else:
+                    # Full extraction
+                    result = self.sam3_extractor.process(context)
+                    if not result.success:
+                        raise SegmentationError(
+                            message=f"SAM3 extraction failed: {result.error_message}",
+                            context={'stage': 2, 'elements_found': len(context.elements)}
+                        )
+                    context.elements = result.elements
+                    context.canvas_width = result.canvas_width
+                    context.canvas_height = result.canvas_height
+
+                print(f"   Elements: {len(context.elements)}")
+                vis_path = os.path.join(img_output_dir, "sam3_extraction.png")
+                self.sam3_extractor.save_visualization(context, vis_path)
+                meta_path = os.path.join(img_output_dir, "sam3_metadata.json")
+                self.sam3_extractor.save_metadata(context, meta_path)
+                checkpoint_mgr.save_checkpoint(2, context)
+
+            # Stage 3: Shape/icon processing
+            if start_stage <= 3:
+                print("\n[3] Shape/icon processing...")
+                result = self.icon_processor.process(context)
+                print(f"   Icons: {result.metadata.get('processed_count', 0)}")
+                result = self.shape_processor.process(context)
+                print(f"   Shapes: {result.metadata.get('processed_count', 0)}")
+                checkpoint_mgr.save_checkpoint(3, context)
+
+            # Stage 4: XML fragments
+            if start_stage <= 4:
+                print("\n[4] XML fragments...")
+                self._generate_xml_fragments(context)
+                xml_count = len([e for e in context.elements if e.has_xml()])
+                print(f"   Fragments: {xml_count}")
+                checkpoint_mgr.save_checkpoint(4, context)
+
+            # Stage 5-6: Metric evaluation and refinement (optional)
+            if with_refinement:
+                if start_stage <= 5:
+                    print("\n[5] Metric evaluation...")
+                    eval_result = self.metric_evaluator.process(context)
+
+                    overall_score = eval_result.metadata.get('overall_score', 0)
+                    bad_regions = eval_result.metadata.get('bad_regions', [])
+                    needs_refinement = eval_result.metadata.get('needs_refinement', False)
+                    bad_region_ratio = eval_result.metadata.get('bad_region_ratio', 0)
+                    pixel_coverage = eval_result.metadata.get('pixel_coverage', 0)
+                    print(f"   Score: {overall_score:.1f}/100, bad regions: {len(bad_regions)} ({bad_region_ratio:.1f}%)")
+                    print(f"   Coverage: {pixel_coverage:.1f}%, needs_refine: {needs_refinement}")
+
+                    # Store for stage 6
+                    context.intermediate_results['eval_result'] = {
+                        'overall_score': overall_score,
+                        'bad_regions': bad_regions,
+                        'needs_refinement': needs_refinement,
+                        'bad_region_ratio': bad_region_ratio,
+                        'pixel_coverage': pixel_coverage,
+                    }
+                    checkpoint_mgr.save_checkpoint(5, context)
+
+                if start_stage <= 6:
+                    # Reconstruct eval data from checkpoint if needed
+                    eval_data = context.intermediate_results.get('eval_result', {})
+                    overall_score = eval_data.get('overall_score', 0)
+                    bad_regions = eval_data.get('bad_regions', [])
+
+                    REFINEMENT_THRESHOLD = 90.0
+                    should_refine = overall_score < REFINEMENT_THRESHOLD and bad_regions
+
+                    if should_refine:
+                        print("\n[6] Refinement...")
+                        context.intermediate_results['bad_regions'] = bad_regions
+                        refine_result = self.refinement_processor.process(context)
+                        new_count = refine_result.metadata.get('new_elements_count', 0)
+                        print(f"   Added {new_count} elements")
+
+                        if new_count > 0:
+                            refine_vis_path = os.path.join(img_output_dir, "refinement_result.png")
+                            new_elements = context.elements[-new_count:] if new_count > 0 else []
+                            self.refinement_processor.save_visualization(context, new_elements, refine_vis_path)
+                            print(f"   Saved: {refine_vis_path}")
+                    elif not bad_regions:
+                        print("\n[6] Refinement skipped (no bad regions)")
+                    else:
+                        print("\n[6] Refinement skipped (score ok)")
+                    checkpoint_mgr.save_checkpoint(6, context)
+
+            # Stage 7: Merge XML
+            if start_stage <= 7:
+                print("\n[7] Merge XML...")
+                merge_result = self.xml_merger.process(context)
+
+                if not merge_result.success:
+                    raise Exception(f"XML merge failed: {merge_result.error_message}")
+
+                output_path = merge_result.metadata.get('output_path')
+                print(f"   Output: {output_path}")
+
+                # Clear checkpoint on success
+                checkpoint_mgr.clear_checkpoint()
+                print(f"\n{'='*60}\nDone.\n{'='*60}")
+
+                return PipelineResult(
+                    success=True,
+                    output_path=output_path,
+                    last_completed_stage=7
+                )
+
         except Exception as e:
-            print(f"\nFailed: {e}")
+            error_msg = str(e)
+            error_code = "PROCESSING_ERROR"
+            can_retry = True
+            last_stage = start_stage - 1
+
+            # Extract error details from EditBananaException
+            if isinstance(e, EditBananaException):
+                error_code = e.error_code
+                can_retry = e.retry_allowed
+                logger.warning(f"Pipeline failed at stage {start_stage}: [{error_code}] {error_msg}")
+            else:
+                logger.warning(f"Pipeline failed at stage {start_stage}: {error_msg}")
+
             import traceback
             traceback.print_exc()
-            return None
+
+            # Save failure state for potential resume
+            checkpoint_mgr.save_checkpoint(last_stage, context, {
+                'error': error_msg,
+                'failed_stage': start_stage,
+                'error_code': error_code,
+            })
+
+            # Build partial results from context
+            partial_elements = [elem.to_dict() for elem in context.elements] if context else []
+            partial_fragments = [frag.to_dict() for frag in context.xml_fragments] if context else []
+
+            print(f"\n[Checkpoint] Saved state at stage {last_stage}. Resume with --resume")
+
+            return PipelineResult(
+                success=False,
+                error_message=error_msg,
+                error_code=error_code,
+                can_retry=can_retry,
+                last_completed_stage=last_stage,
+                partial_elements=partial_elements,
+                partial_xml_fragments=partial_fragments,
+                checkpoint_path=checkpoint_mgr.checkpoint_path
+            )
     
     def _generate_xml_fragments(self, context: ProcessingContext):
         """Generate XML for elements that do not have one yet. Arrows are treated as icon (image crop)."""
@@ -409,7 +702,7 @@ Examples:
     
     # Process
     print(f"\nProcessing {len(image_paths)} image(s)...")
-    
+
     success_count = 0
     for img_path in image_paths:
         result = pipeline.process_image(
@@ -419,9 +712,9 @@ Examples:
             with_text=not args.no_text,
             groups=groups
         )
-        if result:
+        if result.success:
             success_count += 1
-    
+
     # Summary
     print(f"\n{'='*60}")
     print(f"Done: {success_count}/{len(image_paths)} succeeded")

@@ -9,11 +9,14 @@ Usage:
     xml_string = restorer.process("input.png")
 """
 
+import logging
 import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 from .ocr.local_ocr import LocalOCR
 from .coord_processor import CoordProcessor
@@ -147,16 +150,16 @@ class TextRestorer:
         processing_start = time.time()
 
         if formula_result:
-            print("\nFormula refinement...")
+            logger.info("Formula refinement...")
             merged_blocks = self.formula_processor.merge_ocr_results(ocr_result, formula_result)
             text_blocks = self.formula_processor.to_dict_list(merged_blocks)
         else:
             text_blocks = self._ocr_result_to_dict_list(ocr_result)
         
-        print(f"   {len(text_blocks)} text blocks")
+        logger.info(f"   {len(text_blocks)} text blocks")
 
         # Step 3: Coord transform
-        print("\nCoord transform...")
+        logger.info("Coord transform...")
         coord_processor = CoordProcessor(
             source_width=image_width,
             source_height=image_height
@@ -171,16 +174,16 @@ class TextRestorer:
                 block["geometry"] = {"x": 0, "y": 0, "width": 100, "height": 20, "rotation": 0}
         
         # Step 4: Font size
-        print("\nFont size...")
+        logger.info("Font size...")
         text_blocks = self.font_size_processor.process(text_blocks)
         
         # Step 5: Font family
-        print("\nFont family...")
+        logger.info("Font family...")
         global_font = self._detect_global_font(ocr_result)
         text_blocks = self.font_family_processor.process(text_blocks, global_font=global_font)
 
         # Step 6: Style (bold/color)
-        print("\nStyle...")
+        logger.info("Style...")
         ocr_styles = getattr(ocr_result, "styles", [])
         text_blocks = self.style_processor.process(text_blocks, ocr_styles=ocr_styles)
         
@@ -207,13 +210,13 @@ class TextRestorer:
         with Image.open(image_path) as img:
             image_width, image_height = img.size
 
-        print(f"Input: {image_path}")
-        print(f"Output: {output_path}")
-        print(f"Size: {image_width} x {image_height}")
+        logger.info(f"Input: {image_path}")
+        logger.info(f"Output: {output_path}")
+        logger.info(f"Size: {image_width} x {image_height}")
 
         text_blocks = self.process_image(str(image_path))
 
-        print("\nGenerating XML...")
+        logger.info("Generating XML...")
         xml_start = time.time()
         
         generator = MxGraphXMLGenerator(
@@ -263,7 +266,7 @@ class TextRestorer:
     def _run_ocr(self, image_path: str):
         """Run OCR (Tesseract or PaddleOCR + optional Pix2Text for formulas)."""
         engine_label = "PaddleOCR" if self._ocr_engine == "paddleocr" else "Tesseract"
-        print(f"\n📖 Text OCR ({engine_label})...")
+        logger.info(f"Text OCR ({engine_label})...")
         text_start = time.time()
         try:
             ocr_result = self.layout_ocr.analyze_image(image_path)
@@ -280,12 +283,12 @@ class TextRestorer:
             else:
                 raise
         self.timing["text_ocr"] = time.time() - text_start
-        print(f"   {len(ocr_result.text_blocks)} text blocks ({self.timing['text_ocr']:.2f}s)")
+        logger.info(f"   {len(ocr_result.text_blocks)} text blocks ({self.timing['text_ocr']:.2f}s)")
 
         formula_result = None
 
         if self.formula_engine == "pix2text" and self.pix2text_ocr is not None:
-            print("\nFormula refinement...")
+            logger.info("Formula refinement...")
             refine_start = time.time()
             fixed_count = 0
 
@@ -348,11 +351,11 @@ class TextRestorer:
                         new_block.font_family = "Latin Modern Math"
                         
                         if len(group_indices) > 1:
-                            print(f"   Refine [Merge {group_indices}]: '{original_text_combined}' -> '${cleaned_latex}$'")
+                            logger.info(f"   Refine [Merge {group_indices}]: '{original_text_combined}' -> '${cleaned_latex}$'")
                             indices_to_remove.update(group_indices)
                             new_blocks_map[i] = new_block
                         else:
-                            print(f"   Refine [{i}]: '{curr_block.text}' -> '${cleaned_latex}$'")
+                            logger.info(f"   Refine [{i}]: '{curr_block.text}' -> '${cleaned_latex}$'")
                             curr_block.text = f"${cleaned_latex}$"
                             curr_block.is_latex = True
                             curr_block.font_family = "Latin Modern Math"
@@ -375,14 +378,14 @@ class TextRestorer:
                 ocr_result.text_blocks = final_blocks
 
             self.timing["pix2text_ocr"] = time.time() - refine_start
-            print(f"   Refined {fixed_count} formula blocks ({self.timing['pix2text_ocr']:.2f}s)")
+            logger.info(f"   Refined {fixed_count} formula blocks ({self.timing['pix2text_ocr']:.2f}s)")
 
             formula_result = None
 
         elif self.formula_engine == "pix2text" and self.pix2text_ocr is None:
-            print("\nSkipping formula (pix2text not installed)")
+            logger.info("Skipping formula (pix2text not installed)")
         else:
-            print("\nSkipping formula")
+            logger.info("Skipping formula")
 
         return ocr_result, formula_result
 
@@ -495,7 +498,7 @@ class TextRestorer:
         font = getattr(best_block, "font_name", None)
         
         if font:
-            print(f"   Dominant font: {font}")
+            logger.info(f"   Dominant font: {font}")
             return font
         
         return "Arial"
@@ -546,7 +549,7 @@ class TextRestorer:
         with open(metadata_path, "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
         
-        print(f"   Metadata saved: {metadata_path}")
+        logger.info(f"   Metadata saved: {metadata_path}")
     
     def _generate_debug_image(self, image_path: str, output_path: str):
         """Generate debug image."""
@@ -556,24 +559,22 @@ class TextRestorer:
             img = Image.open(image_path)
             img.save(output_path)
         except Exception as e:
-            print(f"   Debug image failed: {e}")
+            logger.warning(f"   Debug image failed: {e}")
     
     def _print_stats(self, text_blocks: List[Dict]):
         """Print stats."""
-        print(f"\nTime:")
-        print(f"   Text OCR:  {self.timing['text_ocr']:.2f}s")
-        print(f"   Pix2Text:  {self.timing['pix2text_ocr']:.2f}s")
-        print(f"   Processing: {self.timing['processing']:.2f}s")
-        print(f"   Total:      {self.timing['total']:.2f}s")
-        
-        print(f"\nDone: {len(text_blocks)} text cells")
+        logger.info(f"Time: Text OCR {self.timing['text_ocr']:.2f}s, "
+                    f"Pix2Text {self.timing['pix2text_ocr']:.2f}s, "
+                    f"Processing {self.timing['processing']:.2f}s, "
+                    f"Total {self.timing['total']:.2f}s")
+        logger.info(f"Done: {len(text_blocks)} text cells")
 
 
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) < 2:
-        print("Usage: python restorer.py <image_path> [output_path]")
+        logger.error("Usage: python restorer.py <image_path> [output_path]")
         sys.exit(1)
     
     image_path = sys.argv[1]

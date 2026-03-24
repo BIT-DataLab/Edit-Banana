@@ -15,14 +15,17 @@
 
 使用示例：
     from processors.font_family import FontFamilyProcessor
-    
+
     processor = FontFamilyProcessor()
     blocks = processor.process(text_blocks, global_font="Arial")
 """
 
 import re
 import copy
+import logging
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class FontFamilyProcessor:
@@ -372,15 +375,15 @@ class FontFamilyProcessor:
 
 if __name__ == "__main__":
     processor = FontFamilyProcessor()
-    
+
     # 测试标准化
-    print("=== 字体标准化测试 ===")
+    logger.info("=== Font standardization test ===")
     test_fonts = ["ArialMT", "Times New Roman", "微软雅黑", "Consolas"]
     for font in test_fonts:
-        print(f"  {font} → {processor.standardize(font)}")
-    
+        logger.info(f"  {font} -> {processor.standardize(font)}")
+
     # 测试推测
-    print("\n=== 字体推测测试 ===")
+    logger.info("=== Font inference test ===")
     test_texts = ["Hello World", "你好世界", "def main():", "Figure 1. Results"]
     for text in test_texts:
-        print(f"  '{text}' → {processor.infer_from_text(text)}")
+        logger.info(f"  '{text}' -> {processor.infer_from_text(text)}")

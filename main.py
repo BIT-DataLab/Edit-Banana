@@ -24,6 +24,9 @@ from typing import Optional, List
 
 # Skip PaddleX model host connectivity check to avoid startup delay
 os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+# MPS (Apple Silicon) lacks a few ops; let PyTorch fall back to CPU for those.
+# Must be set before `import torch`.
+os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 # Suppress requests urllib3/chardet version warning
 warnings.filterwarnings("ignore", message=".*doesn't match a supported version.*")
 

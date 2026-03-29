@@ -14,6 +14,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -37,9 +38,39 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    return {"service": "Edit Banana", "docs": "/docs"}
+    return """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Banana — Universal Content Re-Editor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; background: #fafafa; color: #333; }
+        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+        main img { width: 120px; margin-bottom: 1rem; }
+        main h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        main p { color: #666; max-width: 600px; margin-bottom: 1.5rem; }
+        main a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        main a:hover { text-decoration: underline; }
+        footer { padding: 1.5rem; text-align: center; border-top: 1px solid #e5e7eb; background: #fff; font-size: 0.9rem; color: #888; }
+        footer a { color: #2563eb; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Edit Banana</h1>
+        <p>Universal Content Re-Editor: Make the Uneditable, Editable. Powered by SAM 3 and multimodal large models.</p>
+        <a href="/docs">API Documentation</a>
+    </main>
+    <footer>
+        <a href="https://autofigure.org/">AutoFigure</a>
+    </footer>
+</body>
+</html>"""
 
 
 @app.post("/convert")

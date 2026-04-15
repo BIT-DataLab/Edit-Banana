@@ -36,6 +36,13 @@ Powered by SAM 3 and multimodal large models, it enables high-fidelity reconstru
 
 > [!WARNING]
 > **Please note**: Our GitHub repository currently trails behind our web-based service. For the most up-to-date features and performance, we recommend using our web platform.
+
+> [!NOTE]
+> **Known limitation — multi-panel / schematic figures.** Recent updates (v2 prompts: 19 → 78; new hierarchical layer assignment; [Stage 8 vector export to SVG/PDF](https://github.com/Sdamirsa/Edit-Banana/commit/d6c445a)) significantly improved single-element extraction, but the pipeline still under-understands complex **multi-panel scientific schematics**. Detection is per-element; the global semantics — which arrow connects which box across panel boundaries, which legend swatch labels which plot — is not yet modeled.
+>
+> **Roadmap directions on this challenge:**
+> 1. **Two-pass extraction with panel splitting.** First detect sub-figure panels (Stage 8's `section_detector` already produces panel candidates), split the source image into per-panel crops, then recursively run the full pipeline on each crop. The orchestration loop is the missing piece.
+> 2. **Smart per-element-type margin padding** around cropped rasters. Tight bboxes clip strokes; loose ones bleed neighbors. A per-type heuristic (icon vs. photo vs. schematic illustration) would help, but the logic is hard to pin down cleanly.
 ---
 ## 💬 Join WeChat Group
 

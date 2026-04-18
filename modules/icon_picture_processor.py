@@ -315,8 +315,15 @@ class IconPictureProcessor(BaseProcessor):
         )
     
     def _get_elements_to_process(self, elements: List[ElementInfo]) -> List[ElementInfo]:
-        """Filter elements to process (icons, arrows, etc.; arrows treated as icon crop)."""
-        all_types = set(IMAGE_PROMPT) | {"arrow", "line", "connector"}
+        """Filter elements to process (icons, arrows, etc.; arrows treated as icon crop).
+
+        NOTE: IMAGE_PROMPT contains mixed-case strings (e.g. "3D heart model",
+        "MRI image", "CT scan image"). Comparing `.lower()` against the raw
+        set caused those detections to be silently skipped — no base64 was
+        generated and downstream SVG rendering fell back to a plain polygon
+        outline. Always normalize both sides.
+        """
+        all_types = {t.lower() for t in IMAGE_PROMPT} | {"arrow", "line", "connector"}
         return [
             e for e in elements
             if e.element_type.lower() in all_types and e.base64 is None

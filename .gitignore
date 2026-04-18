@@ -50,3 +50,7 @@ sam3_src/
 # Local processing & debug
 arrow_processing/
 debug_output/
+
+# Local planning notes & AI tool session data
+.amir-zone/
+.claude/

@@ -7,7 +7,7 @@ XML 生成器模块
 
 输出格式：
     draw.io 使用 mxGraph 格式，结构如下：
-    
+
     <mxfile>
       <diagram>
         <mxGraphModel>
@@ -37,9 +37,12 @@ XML 生成器模块
 import html
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import logging
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -296,9 +299,9 @@ class MxGraphXMLGenerator:
         # 删除旧文件
         if output_path.exists():
             output_path.unlink()
-            print(f"已删除旧文件: {output_path}")
-        
+            logger.info(f"Deleted old file: {output_path}")
+
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(xml_content)
-        
-        print(f"已保存到: {output_path}")
+
+        logger.info(f"Saved to: {output_path}")

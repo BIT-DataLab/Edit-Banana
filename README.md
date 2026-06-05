@@ -51,6 +51,10 @@ Welcome to join our WeChat group to discuss and exchange ideas! Scan the QR code
 > [!TIP]
 > If the QR code has expired, please submit an [Issue](https://github.com/BIT-DataLab/Edit-Banana/issues) to request an updated one.
 
+## 📮 Contact Us
+For academic cooperation, technical docking, commercial licensing, project customization and other business inquiries, please contact us via email:
+> **E-mail: ccl@bit.edu.cn**
+
 ---
 ## 📑 Table of Contents
 

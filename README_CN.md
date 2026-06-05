@@ -50,6 +50,12 @@
 > [!TIP]
 > 如果二维码已过期，请提交 [Issue](https://github.com/BIT-DataLab/Edit-Banana/issues) 申请更新。
 
+## 📮联系我们
+如需学术合作、技术对接、商用授权、项目定制及其他商务咨询，欢迎通过邮件与我们取得联系:
+> **邮箱: ccl@bit.edu.cn**
+
+---
+
 ---
 ## 📑 目录
 

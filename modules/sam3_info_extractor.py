@@ -218,7 +218,14 @@ class SAM3Model(ModelWrapper):
         super().__init__()
         self.checkpoint_path = checkpoint_path
         self.bpe_path = bpe_path
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        if device:
+            self.device = device
+        elif torch.cuda.is_available():
+            self.device = "cuda"
+        elif torch.backends.mps.is_available():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
         self._processor = None
         
         # 图像状态缓存

@@ -1,0 +1,58 @@
+[project]
+name = "edit-banana"
+version = "0.1.0"
+description = "Universal Content Re-Editor: Make the Uneditable, Editable"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+    "opencv-python-headless",
+    "numpy",
+    "Pillow",
+    "scikit-image",
+    "requests",
+    "fastapi",
+    "uvicorn[standard]",
+    "pytesseract",
+]
+
+[project.optional-dependencies]
+paddleocr = [
+    "paddlepaddle==3.2.2",
+    "paddleocr",
+]
+formula = [
+    "pix2text",
+    "onnxruntime",
+]
+rmbg = [
+    "onnxruntime",
+]
+torch = [
+    "torch>=2.0",
+    "torchvision",
+]
+sam3 = [
+    "edit-banana[torch]",
+    "sam3",
+    "einops",
+    "pycocotools",
+    "psutil",
+]
+
+[project.scripts]
+edit-banana = "main:main"
+
+[tool.setuptools.packages.find]
+include = ["modules*"]
+
+[tool.uv]
+dev-dependencies = []
+
+[tool.uv.sources]
+sam3 = { path = "sam3_src", editable = true }
+# On macOS Apple Silicon, use default PyPI torch (includes MPS support).
+# For Linux+CUDA, override via:
+#   torch = { index = "pytorch-cu121" }
+#   torchvision = { index = "pytorch-cu121" }

@@ -1,0 +1,20 @@
+# Python Backend Configuration
+# 部署到 Railway/Fly.io/Render 等支持Python的平台
+
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+websockets>=12.0
+
+# Core dependencies (from main project)
+pyyaml>=6.0.1
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+scikit-image>=0.21.0
+requests>=2.31.0
+pytesseract>=0.3.10
+
+# PyTorch (install separately based on CUDA version)
+# torch>=2.1.0
+# torchvision>=0.16.0

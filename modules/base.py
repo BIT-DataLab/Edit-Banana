@@ -14,10 +14,14 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 import os
+import logging
 
 # 避免循环导入
 if TYPE_CHECKING:
     from .data_types import ElementInfo, ProcessingResult, ProcessingConfig, XMLFragment
+
+# Module logger
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -143,7 +147,7 @@ class BaseProcessor(ABC):
     
     def _log(self, message: str):
         """简单的日志输出"""
-        print(f"[{self.name}] {message}")
+        logger.info(f"[{self.name}] {message}")
     
     # ======================== XML生成辅助方法 ========================
     

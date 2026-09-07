@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import torch
 import yaml
+import logging
 from PIL import Image
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
@@ -20,6 +21,8 @@ from prompts.arrow import ARROW_PROMPT
 from prompts.background import BACKGROUND_PROMPT
 from prompts.shape import SHAPE_PROMPT
 from prompts.image import IMAGE_PROMPT
+
+logger = logging.getLogger(__name__)
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -90,7 +93,7 @@ class ConfigLoader:
                 with open(config_path, 'r', encoding='utf-8') as f:
                     cls._config = yaml.safe_load(f)
             else:
-                print(f"[ConfigLoader] Config not found: {config_path}, using defaults")
+                logger.warning(f"Config not found: {config_path}, using defaults")
                 cls._config = cls._get_default_config()
         return cls._config
     
@@ -231,11 +234,11 @@ class SAM3Model(ModelWrapper):
         if self._is_loaded:
             return
             
-        print(f"[SAM3Model] 加载模型中... (设备: {self.device})")
-        
+        logger.info(f"Loading SAM3 model (device: {self.device})...")
+
         from sam3.model_builder import build_sam3_image_model
         from sam3.model.sam3_image_processor import Sam3Processor
-        
+
         self._model = build_sam3_image_model(
             bpe_path=self.bpe_path,
             checkpoint_path=self.checkpoint_path,
@@ -244,8 +247,8 @@ class SAM3Model(ModelWrapper):
         )
         self._processor = Sam3Processor(self._model)
         self._is_loaded = True
-        
-        print("[SAM3Model] 模型加载完成！")
+
+        logger.info("SAM3 model loaded successfully")
     
     def predict(self, image_path: str, prompts: List[str], 
                 score_threshold: float = 0.5,
@@ -1069,22 +1072,22 @@ class Sam3InfoExtractor(BaseProcessor):
     
     def print_prompt_groups(self):
         """打印当前词库配置"""
-        print("\n" + "="*60)
-        print("当前SAM3提示词词库配置 (从 config.yaml 加载)")
-        print("="*60)
-        
+        logger.info("="*60)
+        logger.info("Current SAM3 prompt groups (loaded from config.yaml)")
+        logger.info("="*60)
+
         for group_type, config in self.prompt_groups.items():
-            print(f"\n[{config.name}] ({group_type.value})")
-            print(f"  置信度阈值: {config.score_threshold}")
-            print(f"  最小面积: {config.min_area}")
-            print(f"  优先级: {config.priority}")
-            print(f"  提示词 ({len(config.prompts)}个):")
+            logger.info(f"\n[{config.name}] ({group_type.value})")
+            logger.info(f"  Score threshold: {config.score_threshold}")
+            logger.info(f"  Min area: {config.min_area}")
+            logger.info(f"  Priority: {config.priority}")
+            logger.info(f"  Prompts ({len(config.prompts)}):")
             for p in config.prompts:
-                print(f"    - {p}")
-        
-        print("\n" + "="*60)
-        print(f"配置文件路径: {ConfigLoader.get_config_path()}")
-        print("="*60)
+                logger.info(f"    - {p}")
+
+        logger.info("\n" + "="*60)
+        logger.info(f"Config path: {ConfigLoader.get_config_path()}")
+        logger.info("="*60)
 
 
 # ======================== 快捷函数 ========================

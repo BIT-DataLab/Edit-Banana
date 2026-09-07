@@ -22,10 +22,13 @@ Pix2Text OCR 模块
 """
 
 import math
+import logging
 from pathlib import Path
 from dataclasses import dataclass, field
 
 from pix2text import Pix2Text
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -77,7 +80,7 @@ class Pix2TextOCR:
             device: 计算设备（cuda 使用 GPU3）
             languages: 文字语言（影响非公式部分的识别）
         """
-        print(f"   Pix2Text 使用设备: {device}")
+        logger.info(f"   Pix2Text using device: {device}")
         
         # 降低 MFD 检测阈值，提高公式检测率
         self.p2t = Pix2Text.from_config(
@@ -122,7 +125,7 @@ class Pix2TextOCR:
         blocks = []
         type_counts = {}
         
-        print(f"   Pix2Text 原始识别结果 (共 {len(result)} 项):")
+        logger.info(f"   Pix2Text raw results ({len(result)} items):")
         
         for i, item in enumerate(result):
             block_type = item.get('type', 'text')
@@ -130,7 +133,7 @@ class Pix2TextOCR:
             position = item.get('position', [])
             
             # 打印原始识别内容
-            print(f"      {i+1}. [{block_type}] \"{text}\"")
+            logger.info(f"      {i+1}. [{block_type}] \"{text}\"")
             
             # 统计类型
             type_counts[block_type] = type_counts.get(block_type, 0) + 1
@@ -155,7 +158,7 @@ class Pix2TextOCR:
             blocks.append(block)
         
         # 打印类型统计
-        print(f"   Pix2Text 块类型统计: {type_counts}")
+        logger.info(f"   Pix2Text block type stats: {type_counts}")
         
         return Pix2TextResult(image_width=image_width, image_height=image_height, blocks=blocks)
 
@@ -214,7 +217,7 @@ class Pix2TextOCR:
             return None
             
         except Exception as e:
-            print(f"   Region recognition error: {e}")
+            logger.error(f"   Region recognition error: {e}")
             return None
 
     

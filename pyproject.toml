@@ -1,0 +1,126 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edit-banana"
+version = "0.1.0"
+description = "AI-powered image/PDF to editable DrawIO/PPTX converter"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = [
+    "tests",
+]
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--import-mode=importlib",
+]
+markers = [
+    "unit: Unit tests - fast, isolated, no external dependencies",
+    "integration: Integration tests - test component interactions",
+    "slow: Slow tests - may take longer to run",
+    "requires_tesseract: Tests requiring Tesseract OCR installed",
+    "requires_sam: Tests requiring SAM3 model",
+    "requires_gpu: Tests requiring GPU for model inference",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = [
+    ".",
+]
+branch = true
+omit = [
+    "tests/*",
+    "*/test_*",
+    "venv/*",
+    ".venv/*",
+    "__pycache__/*",
+    ".github/*",
+    "apps/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 0
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.black]
+line-length = 127
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 127
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip = [
+    "venv",
+    ".venv",
+]
+
+[tool.flake8]
+max-line-length = 127
+extend-ignore = [
+    "E203",
+    "W503",
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+    ".eggs",
+]

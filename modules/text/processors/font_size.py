@@ -4,7 +4,10 @@ Font size processor: map OCR block height to pt; optionally unify sizes by proxi
 
 import copy
 import statistics
+import logging
 from typing import List, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 
 class FontSizeProcessor:
@@ -115,7 +118,7 @@ class FontSizeProcessor:
                 result[idx]["font_size"] = round(median_size, 1)
         multi_groups = [g for g in groups.values() if len(g) > 1]
         if multi_groups and adjusted_count > 0:
-            print(f"     Font size: unified {adjusted_count} blocks in {len(multi_groups)} groups")
+            logger.info(f"     Font size: unified {adjusted_count} blocks in {len(multi_groups)} groups")
         return result
 
     def _should_group(
@@ -170,4 +173,4 @@ if __name__ == "__main__":
     
     result = processor.process(test_blocks)
     for i, block in enumerate(result):
-        print(f"Block {i+1}: font_size = {block['font_size']}pt")
+        logger.info(f"Block {i+1}: font_size = {block['font_size']}pt")

@@ -13,9 +13,12 @@
 """
 
 import re
+import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Any
 from dataclasses import field
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -121,15 +124,15 @@ class FormulaProcessor:
         ]
         
         # 详细调试：打印每个检测到的公式
-        print(f"   公式引擎检测到 {len(formula_blocks)} 个公式块:")
+        logger.info(f"   Formula engine detected {len(formula_blocks)} formula blocks:")
         for i, f in enumerate(formula_blocks):
             is_valid = self.is_valid_formula(f.text)
-            status = "✅" if is_valid else "❌"
-            print(f"      {i+1}. {status} \"{f.text}\"")
-        
+            status = "OK" if is_valid else "SKIP"
+            logger.info(f"      {i+1}. {status} \"{f.text}\"")
+
         valid_formulas = [f for f in formula_blocks if self.is_valid_formula(f.text)]
-        
-        print(f"   {len(valid_formulas)}/{len(formula_blocks)} 个有效公式")
+
+        logger.info(f"   {len(valid_formulas)}/{len(formula_blocks)} valid formulas")
         
         merged_results: List[MergedBlock] = []
         layout_used_indices = set()
@@ -368,9 +371,9 @@ class FormulaProcessor:
 
 if __name__ == "__main__":
     processor = FormulaProcessor()
-    
+
     # 测试公式验证
-    print("=== 公式验证测试 ===")
+    logger.info("=== Formula validation test ===")
     test_formulas = [
         r'\frac{a}{b}',
         r'x^2 + y^2 = z^2',
@@ -379,8 +382,8 @@ if __name__ == "__main__":
         r'\sum_{i=1}^{n} x_i'
     ]
     for formula in test_formulas:
-        print(f"  '{formula}': {processor.is_valid_formula(formula)}")
-    
+        logger.info(f"  '{formula}': {processor.is_valid_formula(formula)}")
+
     # 测试文本相似度
-    print("\n=== 文本相似度测试 ===")
-    print(f"  'x^2' vs '$x^2$': {processor.text_similarity('x^2', '$x^2$'):.2f}")
+    logger.info("\n=== Text similarity test ===")
+    logger.info(f"  'x^2' vs '$x^2$': {processor.text_similarity('x^2', '$x^2$'):.2f}")

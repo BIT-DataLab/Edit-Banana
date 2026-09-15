@@ -402,4 +402,4 @@ This project is open-source under the [Apache License 2.0](LICENSE), allowing co
 
 🌟 If this project helps you, please star it to show your support!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=bit-datalab/edit-banana&type=date&legend=top-left)](https://www.star-history.com/#bit-datalab/edit-banana&type=date&legend=top-left)
+[![Star History Chart](https://star-history.dera.page/svg?repos=bit-datalab/edit-banana&type=date&legend=top-left)](https://star-history.dera.page/#bit-datalab/edit-banana&type=date&legend=top-left)

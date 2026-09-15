@@ -1,1 +1,4 @@
 large_files/ filter=lfs diff=lfs merge=lfs -text
+
+# Keep shell scripts with Unix line endings on all platforms
+*.sh text eol=lf

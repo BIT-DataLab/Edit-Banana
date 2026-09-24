@@ -5,9 +5,11 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+*.egg-info/
 env/
 venv/
 .venv/
+uv.lock
 
 # Environment Variables
 .env

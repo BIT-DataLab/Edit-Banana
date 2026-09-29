@@ -583,7 +583,7 @@ class XMLMerger(BaseProcessor):
                         x2=int(float(geom.get("x", 0))) + int(float(geom.get("width", 0))),
                         y2=int(float(geom.get("y", 0))) + int(float(geom.get("height", 0)))
                     )
-                except:
+                except Exception:
                     pass
             
             fragments.append(XMLFragment(

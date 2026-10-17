@@ -32,7 +32,7 @@ Powered by SAM 3 and multimodal large models, it enables high-fidelity reconstru
 </p>
 
 <p align="center">
-  👆 <b>Click above or https://www.editbanana.net/ to try Edit Banana online!</b> Upload an image to get <b>editable DrawIO (XML)</b> in seconds. 
+  👆 <b>Click above or https://www.editbanana.net/ or https://www.editfigure.com to try Edit Banana online!</b> Upload an image to get <b>editable DrawIO (XML)</b> in seconds. 
 </p>
 
 > [!WARNING]

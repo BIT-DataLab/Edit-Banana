@@ -16,18 +16,22 @@ Usage:
 import os
 import io
 import base64
+import logging
 from typing import Optional, List
 from PIL import Image
 import numpy as np
 import cv2
 from prompts.image import IMAGE_PROMPT
+
+logger = logging.getLogger(__name__)
+
 # ONNX Runtime (optional, for RMBG)
 try:
     import onnxruntime as ort
     ONNX_AVAILABLE = True
 except ImportError:
     ONNX_AVAILABLE = False
-    print("[IconPictureProcessor] Warning: onnxruntime not available, RMBG disabled")
+    logger.warning("onnxruntime not available, RMBG disabled")
 
 from .base import BaseProcessor, ProcessingContext, ModelWrapper
 from .data_types import ElementInfo, ProcessingResult, LayerLevel
@@ -64,14 +68,14 @@ class RMBGModel(ModelWrapper):
         """Load RMBG-2.0 ONNX model; fallback to CPU if CUDA fails."""
         if self._is_loaded:
             return
-        
+
         if not ONNX_AVAILABLE:
-            print("[RMBGModel] Warning: onnxruntime not available, using fallback mode")
+            logger.warning("onnxruntime not available, using fallback mode")
             self._is_loaded = True
             return
-        
+
         if not os.path.exists(self.model_path):
-            print(f"[RMBGModel] Warning: Model file not found at {self.model_path}, using fallback mode")
+            logger.warning(f"Model file not found at {self.model_path}, using fallback mode")
             self._is_loaded = True
             return
         
@@ -96,28 +100,28 @@ class RMBGModel(ModelWrapper):
                 continue
             
             try:
-                print(f"[RMBGModel] Trying to load with {name} ({valid_providers})...")
+                logger.info(f"Trying to load with {name} ({valid_providers})...")
                 self._session = ort.InferenceSession(
                     self.model_path,
                     providers=valid_providers,
                     sess_options=session_options
                 )
-                
+
                 self._input_name = self._session.get_inputs()[0].name
                 self._output_name = self._session.get_outputs()[0].name
                 self._providers = valid_providers
-                
+
                 self._is_loaded = True
-                print(f"[RMBGModel] Model loaded successfully with {name}")
+                logger.info(f"Model loaded successfully with {name}")
                 return
-                
+
             except Exception as e:
-                print(f"[RMBGModel] Failed to load with {name}: {e}")
+                logger.warning(f"Failed to load with {name}: {e}")
                 # Try next config
                 continue
-        
+
         # All attempts failed, use fallback
-        print("[RMBGModel] Warning: All loading attempts failed, using fallback mode (no background removal)")
+        logger.warning("All loading attempts failed, using fallback mode (no background removal)")
         self._is_loaded = True
     
     def _preprocess(self, img: np.ndarray) -> tuple:
@@ -177,33 +181,33 @@ class RMBGModel(ModelWrapper):
         except Exception as e:
             # GPU failed, try CPU
             if hasattr(self, '_providers') and 'CUDAExecutionProvider' in self._providers:
-                print(f"[RMBGModel] GPU inference failed (OOM), switching to CPU...")
-                
+                logger.warning(f"GPU inference failed (OOM), switching to CPU...")
+
                 try:
                     # Release session
                     self._session = None
-                    
+
                     # New CPU session
                     session_options = ort.SessionOptions()
                     session_options.log_severity_level = 3
-                    
+
                     self._session = ort.InferenceSession(
                         self.model_path,
                         providers=['CPUExecutionProvider'],
                         sess_options=session_options
                     )
                     self._providers = ['CPUExecutionProvider']
-                    
+
                     # Retry
                     pred = self._session.run([self._output_name], {self._input_name: img_input})[0]
-                    print("[RMBGModel] CPU inference successful")
-                    
+                    logger.info("CPU inference successful")
+
                 except Exception as e2:
-                    print(f"[RMBGModel] CPU inference also failed: {e2}")
-                    print("[RMBGModel] Falling back to no background removal")
+                    logger.error(f"CPU inference also failed: {e2}")
+                    logger.warning("Falling back to no background removal")
                     return image.convert("RGBA")
             else:
-                print(f"[RMBGModel] Inference failed: {e}, using fallback (no background removal)")
+                logger.error(f"Inference failed: {e}, using fallback (no background removal)")
                 return image.convert("RGBA")
         
         # Postprocess alpha

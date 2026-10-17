@@ -11,7 +11,10 @@
 """
 
 import copy
+import logging
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class StyleProcessor:
@@ -202,7 +205,7 @@ class StyleProcessor:
         
         multi_groups = [g for g in groups.values() if len(g) > 1]
         if multi_groups:
-            print(f"     发现 {len(multi_groups)} 个需要统一颜色的组（包含 {sum(len(g) for g in multi_groups)} 个文字块）")
+            logger.info(f"     Found {len(multi_groups)} color groups ({sum(len(g) for g in multi_groups)} blocks)")
         
         for group_indices in groups.values():
             if len(group_indices) < 2:
@@ -327,4 +330,4 @@ if __name__ == "__main__":
     
     result = processor.process(test_blocks, unify=False)
     for block in result:
-        print(f"{block['text']}: bold={block['is_bold']}, italic={block['is_italic']}, color={block.get('font_color')}")
+        logger.info(f"{block['text']}: bold={block['is_bold']}, italic={block['is_italic']}, color={block.get('font_color')}")

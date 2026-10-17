@@ -3,7 +3,10 @@ Coordinate processor: convert OCR polygon to draw.io geometry (x, y, width, heig
 """
 
 import math
+import logging
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -130,10 +133,10 @@ if __name__ == "__main__":
     ]
     
     result = processor.normalize_polygon(test_polygon)
-    print(f"横排文本归一化结果:")
-    print(f"  位置: ({result.x:.2f}, {result.y:.2f})")
-    print(f"  尺寸: {result.width:.2f} x {result.height:.2f}")
-    print(f"  旋转: {result.rotation}°")
-    
+    logger.info(f"Horizontal text normalized result:")
+    logger.info(f"  Position: ({result.x:.2f}, {result.y:.2f})")
+    logger.info(f"  Size: {result.width:.2f} x {result.height:.2f}")
+    logger.info(f"  Rotation: {result.rotation}°")
+
     geometry = processor.polygon_to_geometry(test_polygon)
-    print(f"  Geometry: {geometry}")
+    logger.info(f"  Geometry: {geometry}")

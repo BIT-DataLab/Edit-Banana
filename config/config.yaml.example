@@ -3,9 +3,9 @@
 sam3:
   checkpoint_path: "models/sam3_ms/sam3.pt"
   bpe_path: "models/bpe_simple_vocab_16e6.txt.gz"
-  # device: "cuda" | "cpu" | leave empty for auto (cuda if available)
-  # Set "cpu" if GPU does not match current PyTorch
-  # device: "cpu"
+  # device: "cuda" | "mps" | "cpu" | leave empty for auto (cuda > mps > cpu)
+  # Apple Silicon: use "mps" (requires PYTORCH_ENABLE_MPS_FALLBACK=1)
+  # device: "mps"
   score_threshold: 0.5
   epsilon_factor: 0.02
   min_area: 100

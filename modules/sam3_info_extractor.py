@@ -27,6 +27,31 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from .base import BaseProcessor, ProcessingContext, ModelWrapper
 from .data_types import ElementInfo, BoundingBox, ProcessingResult
 
+# ---------------------------------------------------------------------------
+# Patch SAM3's fused BFloat16 MLP kernel (perflib/fused.py addmm_act).
+# Meta optimized this for H100 GPUs by casting all tensors to BFloat16,
+# but this causes dtype mismatches on consumer GPUs (e.g. RTX 3080/4090).
+# Replace with standard float32 linear + activation.
+# ---------------------------------------------------------------------------
+def _addmm_act_f32(activation, linear, mat1):
+    import torch.nn as nn
+    import torch.nn.functional as F
+    x = F.linear(mat1, linear.weight, linear.bias)
+    if activation in [F.gelu, nn.GELU]:
+        return F.gelu(x)
+    if activation in [F.relu, nn.ReLU]:
+        return F.relu(x)
+    raise ValueError(f"Unexpected activation {activation}")
+
+try:
+    import sam3.perflib.fused as _fused
+    _fused.addmm_act = _addmm_act_f32
+    # Also patch any module that already imported the original reference
+    import sam3.model.vitdet as _vitdet
+    _vitdet.addmm_act = _addmm_act_f32
+except ImportError:
+    pass  # SAM3 not installed yet
+
 
 # ======================== 提示词分组枚举 ========================
 class PromptGroup(Enum):

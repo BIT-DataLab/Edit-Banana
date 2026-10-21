@@ -21,6 +21,12 @@ from .basic_shape_processor import BasicShapeProcessor
 from .metric_evaluator import MetricEvaluator
 from .refinement_processor import RefinementProcessor
 
+# Stage 8: Vector export
+from .vector_exporter import VectorExporter
+from .svg_generator import SVGGenerator
+from .pdf_combiner import PDFCombiner
+from .section_detector import SectionDetector
+
 # Text (modules/text/); optional if ocr/coord_processor missing
 try:
     from .text.restorer import TextRestorer
@@ -53,4 +59,9 @@ __all__ = [
     'BasicShapeProcessor',
     'MetricEvaluator',
     'RefinementProcessor',
+    # Stage 8: Vector export
+    'VectorExporter',
+    'SVGGenerator',
+    'PDFCombiner',
+    'SectionDetector',
 ]

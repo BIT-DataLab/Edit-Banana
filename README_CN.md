@@ -387,4 +387,4 @@ python main.py -i input/test_diagram.png
 
 🌟 如果这个项目对你有帮助，请给个 Star 来支持我们！
 
-[![Star History Chart](https://api.star-history.com/svg?repos=bit-datalab/edit-banana&type=date&legend=top-left)](https://www.star-history.com/#bit-datalab/edit-banana&type=date&legend=top-left)
+[![Star History Chart](https://star-history.dera.page/svg?repos=bit-datalab/edit-banana&type=date&legend=top-left)](https://star-history.dera.page/#bit-datalab/edit-banana&type=date&legend=top-left)

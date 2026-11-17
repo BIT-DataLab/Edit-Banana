@@ -65,6 +65,7 @@ DRAWIO_STYLES = {
     "parallelogram": "shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;",
     "trapezoid": "shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;",
     "square": "rounded=0;whiteSpace=wrap;html=1;aspect=fixed;",
+    "cube": "shape=isoCube;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;",
 }
 
 # 支持矢量化的图形类型
@@ -74,7 +75,7 @@ VECTOR_TYPES = {
     "cylinder", "cloud", "actor",
     "hexagon", "triangle", "parallelogram",
     "title_bar", "section_panel", "container",
-    "trapezoid", "square"
+    "trapezoid", "square", "cube"
 }
 
 
@@ -1413,6 +1414,11 @@ class BasicShapeProcessor(BaseProcessor):
         
         self._log(f"处理完成: {processed_count}个SAM3图形, {cv_added_count}个CV补充")
         
+        # 检测3D立方体（3个相邻矩形合并为cube）
+        if hasattr(self, '_detect_cube_from_elements') and context.elements:
+            context.elements = self._detect_cube_from_elements(context.elements)
+        
+
         return ProcessingResult(
             success=True,
             elements=context.elements,
@@ -1598,6 +1604,126 @@ class BasicShapeProcessor(BaseProcessor):
 
 
 # ======================== 独立处理函数 ========================
+
+    def _detect_cube_from_elements(self, elements):
+        """检测3个相邻矩形/平行四边形是否构成3D立方体投影。
+        
+        神经网络结构图中，3D tensor/feature map通常表示为3个相邻面的平行投影：
+        - 一个正面矩形（大）
+        - 一个顶面平行四边形（梯形）
+        - 一个侧面平行四边形
+        
+        如果3个元素满足：
+        1. 每个都是矩形/平行四边形
+        2. 两两共享一条边
+        3. 相对位置构成透视投影
+        → 合并为一个cube元素。
+        """""
+        if len(elements) < 3:
+            return elements
+            
+        import numpy as np
+        
+        # 收集所有矩形/平行四边形元素
+        rects = []
+        for elem in elements:
+            shape = elem.bbox or elem.shape_type
+            if not elem.bbox:
+                continue
+            b = elem.bbox
+            if hasattr(b, '__iter__'):
+                rects.append((elem, list(b)))
+        
+        merged = set()
+        cube_groups = []
+        
+        # 暴力搜索：检查每3个元素是否构成cube
+        for i in range(len(rects)):
+            if i in merged:
+                continue
+            for j in range(i+1, len(rects)):
+                if j in merged:
+                    continue
+                for k in range(j+1, len(rects)):
+                    if k in merged:
+                        continue
+                    
+                    e1, b1 = rects[i]
+                    e2, b2 = rects[j]
+                    e3, b3 = rects[k]
+                    
+                    if self._is_cube_triplet(b1, b2, b3):
+                        cube_groups.append((e1, e2, e3))
+                        merged.update([i, j, k])
+                        break
+                if i in merged:
+                    break
+        
+        # 合并cube元素
+        new_elements = []
+        used = set()
+        for e1, e2, e3 in cube_groups:
+            used.update([id(e1), id(e2), id(e3)])
+            # 用第一个元素作为cube的容器，合并bbox
+            cube_elem = e1
+            cube_elem.shape_type = "cube"
+            # 扩展bbox覆盖整个cube
+            if hasattr(e1, 'bbox') and hasattr(e2, 'bbox') and hasattr(e3, 'bbox'):
+                b1 = e1.bbox
+                b2 = e2.bbox
+                b3 = e3.bbox
+                x1 = min(b1[0], b2[0], b3[0])
+                y1 = min(b1[1], b2[1], b3[1])
+                x2 = max(b1[2], b2[2], b3[2])
+                y2 = max(b1[3], b2[3], b3[3])
+                cube_elem.bbox = [x1, y1, x2, y2]
+            new_elements.append(cube_elem)
+        
+        # 添加未被合并的元素
+        for elem in elements:
+            if id(elem) not in used:
+                new_elements.append(elem)
+        
+        return new_elements
+    
+    @staticmethod
+    def _is_cube_triplet(b1, b2, b3):
+        """判断3个bbox是否构成3D立方体投影。
+        
+        启发式检测：
+        1. 两两之间有共享边（距离很近）
+        2. 构成一个"L"或"Y"形拓扑
+        3. 总面积比例合理
+        """
+        def rect_distance(a, b):
+            dx = max(0, max(a[0], b[0]) - min(a[2], b[2]))
+            dy = max(0, max(a[1], b[1]) - min(a[3], b[3]))
+            return dx + dy
+        
+        d12 = rect_distance(b1, b2)
+        d13 = rect_distance(b1, b3)
+        d23 = rect_distance(b2, b3)
+        
+        # 至少两对相邻（距离==0）
+        adjacents = sum(1 for d in [d12, d13, d23] if d < 5)
+        if adjacents < 2:
+            return False
+        
+        # 检查面积比（cube的正面积不应比其他面大太多）
+        def area(b):
+            return max(1, (b[2]-b[0]) * (b[3]-b[1]))
+        
+        a1, a2, a3 = area(b1), area(b2), area(b3)
+        max_a = max(a1, a2, a3)
+        min_a = min(a1, a2, a3)
+        
+        # 最大面不应超过最小面的10倍
+        if min_a > 0 and max_a / min_a > 10:
+            return False
+            
+        return True
+
+
 def process_basic_shapes(image: np.ndarray, sam3_elements: dict) -> str:
     """
     处理所有基本图形（SAM3结果 + CV补充检测），生成DrawIO XML。

@@ -255,37 +255,81 @@ class ProcessingConfig:
 
 
 # ======================== 辅助函数 ========================
+
+def _expand_forms(prompts):
+    """Return set containing both lowercase-with-spaces and lowercase-with-underscores forms."""
+    out = set()
+    for p in prompts:
+        low = p.lower()
+        out.add(low)
+        out.add(low.replace(" ", "_"))
+    return out
+
+
+# Lazy-built prompt-derived type sets. Built on first call of get_layer_level
+# to avoid import-time cycles (prompts has no deps, but be safe).
+_TYPE_SETS_CACHE = {}
+
+
+def _get_type_sets():
+    """Build and cache prompt-derived type sets."""
+    if _TYPE_SETS_CACHE:
+        return _TYPE_SETS_CACHE
+    try:
+        from prompts.image import IMAGE_PROMPT
+        from prompts.shape import SHAPE_PROMPT
+        from prompts.arrow import ARROW_PROMPT
+        from prompts.background import BACKGROUND_PROMPT
+    except ImportError:
+        # Fallback: empty sets; legacy hardcoded lists below still apply.
+        IMAGE_PROMPT = SHAPE_PROMPT = ARROW_PROMPT = BACKGROUND_PROMPT = []
+
+    _TYPE_SETS_CACHE["image"] = _expand_forms(IMAGE_PROMPT)
+    _TYPE_SETS_CACHE["shape"] = _expand_forms(SHAPE_PROMPT)
+    _TYPE_SETS_CACHE["arrow"] = _expand_forms(ARROW_PROMPT)
+    _TYPE_SETS_CACHE["background"] = _expand_forms(BACKGROUND_PROMPT)
+    return _TYPE_SETS_CACHE
+
+
 def get_layer_level(element_type: str) -> int:
     """
     根据元素类型获取默认层级
-    
-    供各子模块使用，确保层级分配一致
+
+    供各子模块使用，确保层级分配一致。
+
+    v2 fix: derive image/shape/arrow/background sets from prompt files so
+    specific prompts like "3D heart model" or "MRI image" (which were
+    silently falling through to LayerLevel.OTHER and breaking stacking)
+    now get the correct IMAGE layer.
     """
     element_type = element_type.lower()
-    
-    # 背景/容器类（最底层）
-    if element_type in {'section_panel', 'title_bar'}:
+    sets = _get_type_sets()
+
+    # 背景/容器类（最底层）— legacy names + prompt-derived
+    if element_type in {'section_panel', 'title_bar'} or element_type in sets["background"]:
         return LayerLevel.BACKGROUND.value
-    
-    # 箭头/连接线
-    if element_type in {'arrow', 'line', 'connector'}:
+
+    # 箭头/连接线 — legacy names + prompt-derived
+    if element_type in {'arrow', 'line', 'connector'} or element_type in sets["arrow"]:
         return LayerLevel.ARROW.value
-    
+
     # 文字
     if element_type == 'text':
         return LayerLevel.TEXT.value
-    
-    # 图片类
-    if element_type in {'icon', 'picture', 'image', 'logo', 'chart', 'function_graph'}:
+
+    # 图片类 — legacy names + prompt-derived (this is the fix path for the heart bug)
+    if element_type in {
+        'icon', 'picture', 'image', 'logo', 'chart', 'function_graph'
+    } or element_type in sets["image"]:
         return LayerLevel.IMAGE.value
-    
-    # 基本图形
+
+    # 基本图形 — legacy names + prompt-derived
     if element_type in {
         'rectangle', 'rounded_rectangle', 'rounded rectangle',
         'diamond', 'ellipse', 'circle', 'cylinder', 'cloud',
         'hexagon', 'triangle', 'parallelogram', 'actor'
-    }:
+    } or element_type in sets["shape"]:
         return LayerLevel.BASIC_SHAPE.value
-    
+
     # 其他
     return LayerLevel.OTHER.value

@@ -12,6 +12,8 @@ Usage:
     python main.py -i input/test.png -o output/custom/
     python main.py -i input/test.png --refine
     python main.py -i input/test.png --no-text
+    python main.py -i input/test.png --vector-level=all
+    python main.py -i input/test.png --no-vectors
 """
 
 import os
@@ -39,7 +41,10 @@ from modules import (
     XMLMerger,
     MetricEvaluator,
     RefinementProcessor,
-    
+
+    # Stage 8: Vector export
+    VectorExporter,
+
     # Text (modules/text/)
     TextRestorer,
 
@@ -89,6 +94,7 @@ class Pipeline:
         self._xml_merger = None
         self._metric_evaluator = None
         self._refinement_processor = None
+        self._vector_exporter = None
     
     @property
     def text_restorer(self):
@@ -138,13 +144,21 @@ class Pipeline:
         if self._refinement_processor is None:
             self._refinement_processor = RefinementProcessor()
         return self._refinement_processor
+
+    @property
+    def vector_exporter(self) -> VectorExporter:
+        if self._vector_exporter is None:
+            self._vector_exporter = VectorExporter()
+        return self._vector_exporter
     
     def process_image(self,
                       image_path: str,
                       output_dir: str = None,
                       with_refinement: bool = False,
                       with_text: bool = True,
-                      groups: List[PromptGroup] = None) -> Optional[str]:
+                      groups: List[PromptGroup] = None,
+                      vector_level: str = "granular",
+                      no_vectors: bool = False) -> Optional[str]:
         """Run pipeline on one image. Returns output XML path or None."""
         print(f"\n{'='*60}")
         print(f"Processing: {image_path}")
@@ -264,8 +278,28 @@ class Pipeline:
             
             output_path = merge_result.metadata.get('output_path')
             print(f"   Output: {output_path}")
+
+            # ============ Stage 8: Vector Export ============
+            if not no_vectors:
+                print(f"\n[8] Vector export (level={vector_level})...")
+                context.intermediate_results['vector_level'] = vector_level
+                try:
+                    vec_result = self.vector_exporter.process(context)
+                    if vec_result.success:
+                        vec_count = vec_result.metadata.get('exported_count', 0)
+                        vec_dir = vec_result.metadata.get('vector_dir', '')
+                        print(f"   Exported {vec_count} elements -> {vec_dir}")
+                    else:
+                        print(f"   Vector export failed: {vec_result.error_message}")
+                except Exception as e:
+                    print(f"   Vector export failed: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print("\n[8] Vector export (skipped)")
+
             print(f"\n{'='*60}\nDone.\n{'='*60}")
-            
+
             return output_path
             
         except Exception as e:
@@ -332,6 +366,8 @@ Examples:
   python main.py
   python main.py -i test.png --refine
   python main.py -i test.png --groups image arrow
+  python main.py -i test.png --vector-level=all
+  python main.py -i test.png --no-vectors
         """
     )
     
@@ -348,6 +384,13 @@ Examples:
                         help="Prompt groups to process (default: all)")
     parser.add_argument("--show-prompts", action="store_true",
                         help="Show prompt config")
+
+    # Stage 8: Vector export options
+    parser.add_argument("--vector-level", type=str, default="granular",
+                        choices=['granular', 'section', 'component', 'all'],
+                        help="Vector export granularity (default: granular)")
+    parser.add_argument("--no-vectors", action="store_true",
+                        help="Skip vector export (Stage 8)")
     
     args = parser.parse_args()
     
@@ -417,7 +460,9 @@ Examples:
             output_dir=output_dir,
             with_refinement=args.refine,
             with_text=not args.no_text,
-            groups=groups
+            groups=groups,
+            vector_level=args.vector_level,
+            no_vectors=args.no_vectors,
         )
         if result:
             success_count += 1

@@ -164,7 +164,7 @@ class ElementInfo:
 class XMLFragment:
     """
     XML片段结构 - 用于XMLMerger合并
-    
+
     每个子模块处理完成后，应该生成XMLFragment对象
     """
     element_id: int                    # 关联的元素ID
@@ -172,13 +172,37 @@ class XMLFragment:
     layer_level: int                   # 层级（数值越小越底层）
     bbox: Optional[BoundingBox] = None # 位置信息（用于同层级内按位置/面积排序）
     element_type: str = "unknown"      # 元素类型（用于调试）
-    
+
     @property
     def area(self) -> int:
         """获取面积（用于排序）"""
         if self.bbox:
             return self.bbox.area
         return 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict for checkpoint storage."""
+        return {
+            'element_id': self.element_id,
+            'xml_content': self.xml_content,
+            'layer_level': self.layer_level,
+            'element_type': self.element_type,
+            'bbox': self.bbox.to_list() if self.bbox else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'XMLFragment':
+        """Deserialize from dict."""
+        bbox = None
+        if data.get('bbox'):
+            bbox = BoundingBox.from_list(data['bbox'])
+        return cls(
+            element_id=data['element_id'],
+            xml_content=data['xml_content'],
+            layer_level=data['layer_level'],
+            element_type=data.get('element_type', 'unknown'),
+            bbox=bbox,
+        )
 
 
 @dataclass 

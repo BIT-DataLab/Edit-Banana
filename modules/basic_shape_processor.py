@@ -348,7 +348,7 @@ def extract_style_colors(image: np.ndarray, bbox: list) -> tuple:
             counts = np.bincount(labels.flatten())
             dominant_idx = np.argmax(counts)
             fill_rgb = centers[dominant_idx].astype(int)
-        except:
+        except Exception:
             pass  # 保持中位数结果
     
     # --- 2. 提取描边色 (Stroke Color) ---
@@ -540,7 +540,7 @@ def extract_color_with_mask(image: np.ndarray, bbox: list, mask: np.ndarray,
                 counts = np.bincount(labels.flatten())
                 dominant_idx = np.argmax(counts)
                 fill_rgb = centers[dominant_idx].astype(int)
-            except:
+            except Exception:
                 fill_rgb = np.median(fill_pixels, axis=0).astype(int)
         else:
             fill_rgb = np.median(fill_pixels, axis=0).astype(int)
@@ -1311,7 +1311,7 @@ def detect_rectangles_robust(cv2_image: np.ndarray, existing_elements: dict, con
                     counts = np.bincount(labels.flatten())
                     dominant_idx = np.argmax(counts)
                     fill_rgb = centers[dominant_idx].astype(int)
-                except:
+                except Exception:
                     fill_rgb = np.median(pixels, axis=0).astype(int)
             else:
                 fill_rgb = np.median(pixels, axis=0).astype(int) if len(pixels) > 0 else np.array([255, 255, 255])

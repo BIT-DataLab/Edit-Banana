@@ -390,7 +390,107 @@ Feature Suggestions: [Discussions](https://github.com/BIT-DataLab/Edit-Banana/di
 
 ---
 
-
+## 🤩 Contributors
+359
+￼
+-
+360
+￼
+-
+Thanks to all developers who have contributed to the project and promoted its iteration!
+361
+￼
+-
+362
+￼
+-
+<details>
+363
+￼
+-
+<summary><b>View Contributors List</b></summary>
+364
+￼
+-
+365
+￼
+-
+| Name/ID | Email |
+366
+￼
+-
+|---------|-------|
+367
+￼
+-
+| Chai Chengliang | ccl@bit.edu.cn |
+368
+￼
+-
+| Zhang Chi |  |
+369
+￼
+-
+| Lin Zheng |  |
+370
+￼
+-
+| Rao Sijing |  |
+371
+￼
+-
+| Yi Xiangjian |  |
+372
+￼
+-
+| Zhou Nan |  |
+373
+￼
+-
+| Yuan Weishuo |  |
+373
+￼
+-
+| Wang Kejin |  |
+373
+￼
+-
+| Li Jianhui |  |
+373
+￼
+-
+| Zhang Junkai |  |
+375
+￼
+-
+| Han Junyi |  |
+376
+￼
+-
+| You Zirui |  |
+377
+￼
+-
+| Xu Haochen |  |
+378
+￼
+-
+| Yu Xinjiang|  |
+381
+358
+384
+￼
+-
+</details>
+385
+￼
+-
+386
+￼
+-
+---
+387
+359
 
 ## 📄 License
 
